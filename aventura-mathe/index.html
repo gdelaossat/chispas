@@ -254,6 +254,18 @@ details.all summary{cursor:pointer;font-family:var(--display);font-weight:700;fo
 .optrow .opts{display:flex;flex-wrap:wrap;gap:9px;margin:0}
 .sw{width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0}
 .avopt{width:58px;height:58px;padding:0;border:2px solid var(--ink);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.avopt.em{font-size:28px;line-height:1;background:var(--card)}
+.colh{font-size:20px;margin:16px 0 0}
+.colh small{color:var(--muted);font-family:var(--body);font-size:14px;font-weight:700}
+.gift{background:var(--card);border:2px dashed var(--star);border-radius:14px;padding:8px 12px;font-weight:800}
+.giftst{font-size:34px;vertical-align:middle}
+.tok{font-weight:800;color:var(--teal);margin:6px auto}
+.isle.tabl{box-shadow:0 6px 0 var(--teal);margin-top:0}
+#mC{display:block;width:100%;max-width:360px;margin:0 auto;border:3px solid var(--ink);border-radius:16px;touch-action:none;background:#8fd3f4}
+.mhud{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
+.mctl{display:flex;gap:12px;max-width:360px;margin:10px auto 0}
+.mctl .k{flex:1;height:62px;font-size:30px;touch-action:none;user-select:none;-webkit-user-select:none}
+.rules{text-align:left;max-width:36ch;margin:10px auto;padding-left:22px}
 .sw.none{background:var(--card) linear-gradient(135deg,transparent 44%,var(--red) 44%,var(--red) 56%,transparent 56%)}
 .sw.sel,.avopt.sel{outline:4px solid var(--teal);outline-offset:2px}
 @media (max-height:720px){.k{height:46px}.pad{gap:6px;margin-top:10px}.sheet{padding:12px 12px}}
@@ -310,6 +322,7 @@ details.all summary{cursor:pointer;font-family:var(--display);font-weight:700;fo
 
   <section id="result" class="hidden"></section>
   <section id="album" class="hidden"></section>
+  <section id="mini" class="hidden"></section>
 </div>
 
 <script>
@@ -323,11 +336,11 @@ const rep = (n, f) => Array.from({ length: n }, f);
 const uniq = a => [...new Set(a)];
 const eur = c => Math.floor(c / 100) + ',' + String(c % 100).padStart(2, '0') + ' €';
 const PRAISE = ['¡Muy bien!', '¡Exacto!', '¡Eso es!', '¡Perfecto!', '¡Excelente!', '¡Súper!', '¡Toll!', '¡Sehr gut!'];
-const SECTIONS = ['setup', 'home', 'world', 'play', 'result', 'album'];
-function show(id) { SECTIONS.forEach(x => $('#' + x).classList.toggle('hidden', x !== id)); window.scrollTo(0, 0); }
+const SECTIONS = ['setup', 'home', 'world', 'play', 'result', 'album', 'mini'];
+function show(id) { if (id !== 'mini') stopMini(); SECTIONS.forEach(x => $('#' + x).classList.toggle('hidden', x !== id)); window.scrollTo(0, 0); }
 
 /* ---------- Progreso guardado ---------- */
-let S = { coins: 0, xp: 0, stars: {}, stickers: [], day: '', streak: 0, maxStreak: 0, maxCombo: 0, boss: false, sound: true };
+let S = { coins: 0, xp: 0, stars: {}, stickers: [], day: '', streak: 0, maxStreak: 0, maxCombo: 0, boss: false, sound: true, tokens: 1, miniBest: 0 };
 try { S = { ...S, ...(JSON.parse(localStorage.getItem('aventura-estado')) || {}) }; } catch (e) {}
 const save = () => { try { localStorage.setItem('aventura-estado', JSON.stringify(S)); } catch (e) {} };
 
@@ -699,7 +712,7 @@ const gDialogo = teoria('tienda', 'En la tienda · Einkaufen', [
 const T7 = 'Longitud · Längen';
 const THINGS = [['✏️', 'el lápiz', '#f0a202'], ['🖍️', 'el crayón', '#d24a42'], ['🔋', 'la pila', '#5d6b7a'], ['🔑', 'la llave', '#c9a227'], ['🥄', 'la cuchara', '#8fa3b5'], ['🪥', 'el cepillo', '#3fb8a9'], ['📎', 'el clip', '#7a4fd0'], ['🍬', 'el dulce', '#ef7fb0']];
 function gReglaCm() {
-  const max = narrow() ? 8 : 13, off = Math.random() < .35, from = off ? rnd(1, 3) : 0, len = rnd(2, max - 1 - from), th = pick(THINGS);
+  const max = narrow() ? 8 : 13, off = false, from = 0, len = rnd(2, max - 1), th = pick(THINGS);
   return { w: 'medidas', tag: 'Medir en centímetros · Zentimeter', kind: 'num', prompt: `¿Cuántos <strong>centímetros</strong> mide ${th[1]}?`, visual: () => rulerSVG({ max, from: from * 10, to: (from + len) * 10, emoji: th[0], color: th[2] }),
     slots: [{ ans: len, unit: 'cm' }], hint: off ? '¡Ojo! No empieza en el 0. Cuenta los centímetros entre el inicio y el final.' : 'Mira en qué número termina el objeto.',
     explain: off ? `Empieza en el ${from} y termina en el ${from + len}: ${from + len} − ${from} = <b>${len} cm</b>.` : `Empieza en el 0 y termina en el ${len}: mide <b>${len} cm</b>.` };
@@ -803,12 +816,22 @@ const WORLDS = [
       <div class="ex">1 m = 10 dm = 100 cm = 1 000 mm<small>1 cm = 10 mm</small></div>
       ${rulerSVG({ max: narrow() ? 7 : 12, from: 0, to: 36, emoji: '🔋', color: '#5d6b7a' })}
       <p>La pila llega a 3 cm y 6 rayitas más: 30 mm + 6 mm = <b>36 mm</b>.</p>
-      <h3>Para medir bien</h3><ul><li>Pon el inicio del objeto en el <b>0</b> de la regla.</li><li>Si no empieza en 0, resta: final − inicio.</li><li>Las rayitas pequeñas son milímetros.</li></ul>
+      <h3>Para medir bien</h3><ul><li>Pon el inicio del objeto en el <b>0</b> de la regla.</li><li>Mira en qué número termina el objeto.</li><li>Las rayitas pequeñas son milímetros.</li></ul>
       <div class="ex">123 cm = 1 m y 23 cm<small>3 cm y 6 mm = 36 mm · 60 mm = 6 cm</small></div>
       <div class="voc"><span><b>die Länge</b> la longitud</span><span><b>das Lineal</b> la regla</span><span><b>lang</b> largo</span><span><b>messen</b> medir</span></div>` }
 ];
 const WBY = Object.fromEntries(WORLDS.map(w => [w.id, w]));
-const STICKERS = ['🦄', '🐙', '🦖', '🚀', '🌈', '🍕', '🎸', '🧁', '🐳', '🦊', '🐼', '🦋', '🍭', '⚽', '🎨', '🪐', '🧩', '🎻', '🦩', '🐢', '🍉', '🤖', '🐝', '🎠', '🦜', '🍩', '🛼', '🐬', '🌻', '🍓'];
+const ALBUM = [
+  ['🐾 Animales', ['🐙', '🐳', '🦊', '🐼', '🦋', '🦩', '🐢', '🐝', '🦜', '🐬', '🦔', '🐱', '🐶', '🐰', '🦁', '🐯', '🐨', '🐸', '🐧', '🦉', '🦒', '🐘', '🦥', '🦦']],
+  ['🍕 Comida rica', ['🍕', '🧁', '🍭', '🍉', '🍩', '🍓', '🍦', '🍪', '🥞', '🌮', '🍿', '🥑', '🍒', '🍍', '🥨', '🧇', '🍫', '🍌', '🥐', '🍔']],
+  ['🚀 Espacio y ciencia', ['🚀', '🪐', '🤖', '🌙', '⭐', '☄️', '🛸', '🔭', '🔬', '🧪', '🧲', '💡', '🌍', '🛰️', '⚡', '🧬', '🔋', '🌠']],
+  ['⚽ Deportes y juegos', ['⚽', '🧩', '🛼', '🎠', '🏀', '🎾', '🏐', '🛹', '🚲', '🏓', '🎯', '🎮', '🪁', '🎳', '🥇', '🏆', '🎲', '🤿']],
+  ['🎻 Arte y música', ['🎸', '🎨', '🎻', '🎹', '🥁', '🎺', '🎷', '🎤', '🎧', '🎬', '📚', '✏️', '🖍️', '🎭', '🎵', '🎼']],
+  ['🌈 Naturaleza', ['🌈', '🌻', '🌵', '🌴', '🍄', '🌸', '🍀', '🌊', '🔥', '❄️', '🌋', '🏝️', '⛰️', '🌞', '🍁', '🐚']],
+  ['🦄 Fantasía', ['🦄', '🦖', '🐉', '🦕', '🧚', '🧙', '🏰', '🗝️', '💎', '🔮', '👻', '🎃', '🧸', '🎁', '🎈', '🎀']],
+  ['🚂 Transporte', ['🚗', '🚌', '🚂', '✈️', '🚁', '⛵', '🚜', '🚒', '🛴', '🚤', '🚠', '🏎️']]
+];
+const STICKERS = uniq(ALBUM.flatMap(c => c[1]));
 const JOKES = ['¿Qué le dijo el 0 al 8? ¡Qué cinturón tan bonito!', '¿Qué le dice el 1 al 10? Para ser como yo, tienes que ser sin-cero.', '¿Cuál es el colmo de un matemático? Tener muchos problemas.', '¿Por qué el libro de mate está triste? Porque tiene demasiados problemas.', '¿Qué hace una abeja en el gimnasio? ¡Zum-ba!', '¿Qué le dijo un pez a otro pez? ¡Nada, nada!', 'Truco: después de la coma, los céntimos SIEMPRE llevan dos cifras.', 'Truco: si te piden Nachbarzehner, la respuesta termina en un solo 0.', 'Truco: en la regla, empieza a medir desde el 0.', 'Soy Zifri el erizo. En alemán erizo se dice „der Igel“.'];
 const LOGROS = [
   ['🌟', 'Primera estrella', 'Gana tu primera estrella en una isla', () => Object.values(S.stars).some(v => v > 0)],
@@ -817,29 +840,34 @@ const LOGROS = [
   ['💎', 'Triple brillo', '3 estrellas en las 7 islas', () => WORLDS.every(w => S.stars[w.id] >= 3)],
   ['📅', 'Tres días seguidos', 'Estudia 3 días seguidos', () => S.maxStreak >= 3],
   ['🧩', 'Coleccionista', 'Reúne 10 stickers', () => S.stickers.length >= 10],
+  ['📚', 'Súper coleccionista', 'Reúne 50 stickers', () => S.stickers.length >= 50],
+  ['🌟', 'Álbum completo', 'Reúne todos los stickers', () => S.stickers.length >= STICKERS.length + 1],
+  ['🗓️', 'Semana de fuego', 'Estudia 7 días seguidos', () => S.maxStreak >= 7],
   ['🐉', 'Doma dragones', 'Vence al Dragón del Examen', () => S.boss]
 ];
 
 /* ---------- Perfil y avatar ---------- */
 const AV = {
-  skin: ['#f9d9bd', '#efc29d', '#d39e6f', '#a56b43', '#6e432a'],
-  hairStyle: ['corta', 'de lado', 'copete', 'puntas', 'rapado', 'degradado', 'mohicano', 'tazón', 'cortina', 'rizos cortos', 'melena', 'rizos', 'afro', 'larga', 'ondas', 'flequillo', 'coletas', 'cola', 'trenza', 'moño', 'chonguitos'],
-  hair: ['#8a3fc7', '#b77ee0', '#5a2482', '#6a5be0', '#e0577c', '#f39ac0', '#2f7fe0', '#1fb5a8', '#c4302b', '#2b1d14', '#6b3f22', '#c27a3c', '#e9c766', '#c8ccd4'],
-  eyes: ['puntos', 'felices', 'pestañas', 'grandes', 'guiño'],
-  mouth: ['sonrisa', 'sonrisota', 'dientes', 'lengua', 'gatito', 'beso', 'tímida', 'sorpresa', 'seria', 'triste'],
+  skin: ['#f9d9bd', '#efc29d', '#d39e6f', '#a56b43', '#6e432a', '#9fe0a8', '#a9d4ff', '#d9b8ff', '#ffc9de'],
+  hairStyle: ['corta', 'de lado', 'copete', 'puntas', 'rapado', 'degradado', 'mohicano', 'tazón', 'cortina', 'rizos cortos', 'melena', 'rizos', 'afro', 'larga', 'ondas', 'flequillo', 'coletas', 'cola', 'trenza', 'moño', 'chonguitos', 'dos trenzas', 'cola alta', 'calvo'],
+  hair: ['#8a3fc7', '#b77ee0', '#5a2482', '#6a5be0', '#e0577c', '#f39ac0', '#2f7fe0', '#1fb5a8', '#c4302b', '#2b1d14', '#6b3f22', '#c27a3c', '#e9c766', '#c8ccd4', '#3aa655', '#ff8a3d', '#ff4f81', '#111111', '#f4f1ea', '#7ad3ff'],
+  eyes: ['puntos', 'felices', 'pestañas', 'grandes', 'guiño', 'estrellas', 'corazones', 'dormilón'],
+  mouth: ['sonrisa', 'sonrisota', 'dientes', 'lengua', 'gatito', 'beso', 'tímida', 'sorpresa', 'seria', 'triste', 'colmillos', 'bigote', 'chicle'],
   shadow: ['nada', '#b77ee0', '#8a3fc7', '#f39ac0', '#ff4f81', '#5fb7ff', '#1fb5a8', '#f5c400'],
   cheekShape: ['redondas', 'óvalo', 'corazones', 'rayitas', 'nada'],
   cheekColor: ['#ff7f96', '#ff4f81', '#f39ac0', '#b77ee0', '#ff8a3d', '#e84a4a'],
   gems: ['nada', 'ojos', 'frente', 'mejillas', 'estrellas', 'corazón'],
   gemColor: ['#ffffff', '#f39ac0', '#b77ee0', '#8a3fc7', '#5fb7ff', '#f5c400'],
-  acc: ['nada', 'gafas', 'gafas de sol', 'gorra', 'gorra atrás', 'cinta', 'antifaz', 'pirata', 'dino', 'gorro', 'audífonos', 'rayo', 'balón', 'estrella', 'corona', 'nota', 'pecas', 'lazo', 'diadema', 'flor', 'mariposa', 'arcoíris'],
+  acc: ['nada', 'gafas', 'gafas de sol', 'gorra', 'gorra atrás', 'cinta', 'antifaz', 'pirata', 'dino', 'gorro', 'audífonos', 'rayo', 'balón', 'estrella', 'corona', 'nota', 'pecas', 'lazo', 'diadema', 'flor', 'mariposa', 'arcoíris', 'orejas de gato', 'orejas de conejo', 'unicornio', 'tiara', 'mago', 'casco espacial'],
   shirt: ['#8a3fc7', '#d42a3a', '#11877b', '#7a4fd0', '#e9a800', '#2f6fd6', '#ef7fb0', '#1fb5a8', '#ff8a3d', '#2f3542', '#f4f4f4'],
-  bg: ['#cfe6ff', '#ffe1ea', '#e3f6d8', '#fff0c2', '#e8e0ff', '#ffd9c2', '#d9c2ff', '#c2f0ec', '#ffd1f0', '#dfe4ea']
+  bg: ['#cfe6ff', '#ffe1ea', '#e3f6d8', '#fff0c2', '#e8e0ff', '#ffd9c2', '#d9c2ff', '#c2f0ec', '#ffd1f0', '#dfe4ea', '#ffb3c7', '#b3e5ff', '#c8f7c5', '#ffe66d', '#ffbf8a', '#2f3542'],
+  print: ['nada', '⭐', '❤️', '⚡', '⚽', '🎵', '🌈', '🚀', '🐾', '🦖', '🎻', '🌸'],
+  pet: ['nada', '🐱', '🐶', '🦔', '🐰', '🦜', '🐢', '🐹', '🐧', '🦊', '🦄', '🐉']
 };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let profile = null, draft = null, avN = 0;
 try { profile = JSON.parse(localStorage.getItem('repaso-perfil')); } catch (e) {}
-const DEF = { mouth: 'sonrisa', cheekShape: 'redondas', cheekColor: '#ff7f96', shadow: 'nada', gems: 'nada', gemColor: '#ffffff' };
+const DEF = { print: 'nada', pet: 'nada', mouth: 'sonrisa', cheekShape: 'redondas', cheekColor: '#ff7f96', shadow: 'nada', gems: 'nada', gemColor: '#ffffff' };
 const randomProfile = name => { const p = { name }; Object.keys(AV).forEach(k => p[k] = pick(AV[k])); return p; };
 
 function avatarSVG(p, mood, vb) {
@@ -859,11 +887,14 @@ function avatarSVG(p, mood, vb) {
   if (hs === 'trenza') s += [[30, 72], [27, 84], [30, 96], [27, 108]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7.5" fill="${H}"/>`).join('') + `<circle cx="27" cy="116" r="3.5" fill="${p.shirt}"/>`;
   if (hs === 'chonguitos') s += `<circle cx="35" cy="30" r="13" fill="${H}"/><circle cx="85" cy="30" r="13" fill="${H}"/>`;
   if (hs === 'melena') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 L95 82 Q86 90 82 74 L38 74 Q34 90 25 82Z" fill="${H}"/>`;
+  if (hs === 'dos trenzas') s += [[31, 70], [28, 81], [31, 92], [28, 103], [89, 70], [92, 81], [89, 92], [92, 103]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="${H}"/>`).join('') + `<circle cx="28" cy="111" r="3.5" fill="${p.shirt}"/><circle cx="92" cy="111" r="3.5" fill="${p.shirt}"/>`;
+  if (hs === 'cola alta') s += `<path d="M52 26 Q44 4 60 2 Q80 2 84 22 Q88 36 80 44 Q78 26 68 22Z" fill="${H}"/><circle cx="60" cy="24" r="4.5" fill="${p.shirt}"/>`;
   s += `<path d="M16 120 Q18 92 60 92 Q102 92 104 120Z" fill="${p.shirt}"/>`;
+  if (p.print !== 'nada') s += `<text x="60" y="116" text-anchor="middle" font-size="14">${p.print}</text>`;
   s += `<rect x="52" y="78" width="16" height="16" fill="${S}"/>`;
   s += `<circle cx="31" cy="60" r="5" fill="${S}"/><circle cx="89" cy="60" r="5" fill="${S}"/><circle cx="60" cy="58" r="29" fill="${S}"/>`;
   if (hs === 'corta' || hs === 'larga') s += `<path d="M30 56 Q28 26 60 26 Q92 26 90 56 Q86 42 72 38 Q60 46 44 40 Q34 44 30 56Z" fill="${H}"/>`;
-  if (['coletas', 'moño', 'cola', 'trenza', 'chonguitos'].includes(hs)) s += `<path d="M31 52 Q32 27 60 27 Q88 27 89 52 Q75 36 60 36 Q45 36 31 52Z" fill="${H}"/>`;
+  if (['coletas', 'moño', 'cola', 'trenza', 'chonguitos', 'dos trenzas', 'cola alta'].includes(hs)) s += `<path d="M31 52 Q32 27 60 27 Q88 27 89 52 Q75 36 60 36 Q45 36 31 52Z" fill="${H}"/>`;
   if (hs === 'rizos' || hs === 'afro') s += [[40, 36, 10], [52, 31, 10], [67, 31, 10], [80, 36, 10], [34, 46, 8], [86, 46, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
   if (hs === 'ondas') s += `<path d="M30 60 Q27 25 60 25 Q93 25 90 60 Q88 40 70 33 Q48 34 30 60Z" fill="${H}"/>`;
   if (hs === 'flequillo') s += `<path d="M30 52 Q30 25 60 25 Q90 25 90 52Z" fill="${H}"/>`;
@@ -878,7 +909,12 @@ function avatarSVG(p, mood, vb) {
   if (hs === 'copete') s += `<path d="M30 55 Q27 30 46 24 Q52 12 72 16 Q92 22 90 55 Q86 41 72 39 Q54 44 42 37 Q33 44 30 55Z" fill="${H}"/>`;
   if (hs === 'puntas') s += `<path d="M30 55 L32 31 L40 39 L44 21 L52 34 L60 16 L68 34 L76 21 L80 39 L88 31 L90 55 Q76 40 60 40 Q44 40 30 55Z" fill="${H}" stroke="${H}" stroke-width="2" stroke-linejoin="round"/>`;
   if (p.shadow !== 'nada') s += `<ellipse cx="49" cy="54.5" rx="7.5" ry="4.5" fill="${p.shadow}" opacity=".55"/><ellipse cx="71" cy="54.5" rx="7.5" ry="4.5" fill="${p.shadow}" opacity=".55"/>`;
-  if (p.eyes === 'guiño') s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><path d="M66 58 Q71 62 76 58" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  const star5 = (x, y, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * .45 : r; d += (i ? 'L' : 'M') + (x + rr * Math.cos(a)).toFixed(1) + ' ' + (y + rr * Math.sin(a)).toFixed(1); } return d + 'Z'; };
+  const eyeHeart = (x, y) => `<path d="M${x} ${y + 5} C${x - 8} ${y - 1} ${x - 4} ${y - 7} ${x} ${y - 3} C${x + 4} ${y - 7} ${x + 8} ${y - 1} ${x} ${y + 5}Z" fill="#e0245e"/>`;
+  if (p.eyes === 'estrellas') s += `<path d="${star5(49, 58, 6.5)}" fill="#f5b301" stroke="#2b2b2b" stroke-width="1" stroke-linejoin="round"/><path d="${star5(71, 58, 6.5)}" fill="#f5b301" stroke="#2b2b2b" stroke-width="1" stroke-linejoin="round"/>`;
+  else if (p.eyes === 'corazones') s += eyeHeart(49, 58) + eyeHeart(71, 58);
+  else if (p.eyes === 'dormilón') s += `<path d="M44 57 Q49 62 54 57 M66 57 Q71 62 76 57" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/><text x="81" y="47" font-size="10" font-weight="700" fill="#2b2b2b">z</text><text x="88" y="40" font-size="7" font-weight="700" fill="#2b2b2b">z</text>`;
+  else if (p.eyes === 'guiño') s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><path d="M66 58 Q71 62 76 58" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
   else if (p.eyes === 'grandes') s += `<ellipse cx="49" cy="57" rx="6" ry="7" fill="#fff" stroke="#2b2b2b" stroke-width="1.5"/><ellipse cx="71" cy="57" rx="6" ry="7" fill="#fff" stroke="#2b2b2b" stroke-width="1.5"/><circle cx="50" cy="58" r="3.6" fill="#2b2b2b"/><circle cx="72" cy="58" r="3.6" fill="#2b2b2b"/><circle cx="51.3" cy="56.6" r="1.2" fill="#fff"/><circle cx="73.3" cy="56.6" r="1.2" fill="#fff"/>`;
   else if (p.eyes === 'felices') s += `<path d="M44 59 Q49 53 54 59 M66 59 Q71 53 76 59" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
   else s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="71" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><circle cx="72.2" cy="56.8" r="1.2" fill="#fff"/>`;
@@ -900,7 +936,10 @@ function avatarSVG(p, mood, vb) {
     'tímida': ln('M55 71 Q61 74.5 66 70'),
     sorpresa: `<ellipse cx="60" cy="72" rx="4" ry="4.5" fill="${L}"/>`,
     seria: ln('M53 71 L67 71'),
-    triste: ln('M52 74 Q60 68 68 74')
+    triste: ln('M52 74 Q60 68 68 74'),
+    colmillos: ln('M52 70 Q60 77 68 70') + `<path d="M54.5 72.3L56.5 77.5L58.8 73.8ZM61.2 73.8L63.5 77.5L65.5 72.3Z" fill="#fff" stroke="${L}" stroke-width=".7" stroke-linejoin="round"/>`,
+    bigote: `<path d="M60 67.5 Q53 62 45 67 Q52 72 60 69 Q68 72 75 67 Q67 62 60 67.5Z" fill="#4a2d1a"/>` + ln('M55 74 Q60 77.5 65 74'),
+    chicle: `<circle cx="62" cy="75" r="8.5" fill="#ff8fc0" stroke="#e0577c" stroke-width="1"/><circle cx="59" cy="72" r="2.2" fill="#fff" opacity=".85"/>`
   };
   s += MOUTHS[mood === 'happy' ? 'sonrisota' : mood === 'think' ? 'sorpresa' : p.mouth] || MOUTHS.sonrisa;
   const gc = p.gemColor;
@@ -931,7 +970,14 @@ function avatarSVG(p, mood, vb) {
   if (p.acc === 'gorra') s += `<path d="M30 45 Q30 15 60 15 Q90 15 90 45Z" fill="#2f6fd6"/><path d="M56 38 Q92 34 106 47 Q90 52 56 47Z" fill="#1f4f9e"/><circle cx="60" cy="16" r="3" fill="#1f4f9e"/>`;
   if (p.acc === 'rayo') s += `<polygon points="90,14 77,33 85,33 79,48 96,27 87,27" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/>`;
   if (p.acc === 'balón') s += `<circle cx="88" cy="30" r="10" fill="#fff" stroke="#2f3542" stroke-width="2"/><polygon points="88,25 92.5,28.5 90.8,33.5 85.2,33.5 83.5,28.5" fill="#2f3542"/><path d="M88 25V20M92.5 28.5L97 27M90.8 33.5L93.5 38M85.2 33.5L82.5 38M83.5 28.5L79 27" stroke="#2f3542" stroke-width="1.5"/>`;
+  if (p.acc === 'orejas de gato') s += `<path d="M34 36L35 14L52 26Z" fill="${H}"/><path d="M86 36L85 14L68 26Z" fill="${H}"/><path d="M38 31L38.5 20L47 26.5Z" fill="#ff9ec4"/><path d="M82 31L81.5 20L73 26.5Z" fill="#ff9ec4"/>`;
+  if (p.acc === 'orejas de conejo') s += `<ellipse cx="46" cy="14" rx="7" ry="17" fill="#fff" stroke="#d9c6cf" transform="rotate(-10 46 14)"/><ellipse cx="74" cy="14" rx="7" ry="17" fill="#fff" stroke="#d9c6cf" transform="rotate(10 74 14)"/><ellipse cx="46" cy="15" rx="3" ry="11" fill="#ff9ec4" transform="rotate(-10 46 15)"/><ellipse cx="74" cy="15" rx="3" ry="11" fill="#ff9ec4" transform="rotate(10 74 15)"/>`;
+  if (p.acc === 'unicornio') s += `<path d="M60 1L53 28L67 28Z" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/><path d="M56.5 14L64 11M55 21L66 17" stroke="#c99a00" stroke-width="1.5"/>`;
+  if (p.acc === 'tiara') s += `<path d="M40 34 Q44 22 52 28 Q56 16 60 14 Q64 16 68 28 Q76 22 80 34" stroke="#c9ccd6" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60" cy="21" r="3.5" fill="#ff4f81"/><circle cx="48" cy="29" r="2" fill="#7ad3ff"/><circle cx="72" cy="29" r="2" fill="#7ad3ff"/>`;
+  if (p.acc === 'mago') s += `<path d="M60 -6L38 33L82 33Z" fill="#5a2482"/><ellipse cx="60" cy="33" rx="31" ry="6.5" fill="#43186b"/><path d="${star5(58, 17, 5)}" fill="#f5c400"/><circle cx="67" cy="26" r="1.6" fill="#f5c400"/><circle cx="52" cy="27" r="1.3" fill="#f5c400"/>`;
+  if (p.acc === 'casco espacial') s += `<circle cx="60" cy="56" r="41" fill="#a9d4ff" fill-opacity=".22" stroke="#e8eef5" stroke-width="5"/><path d="M30 38 Q40 22 56 19" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><rect x="50" y="94" width="20" height="6" rx="3" fill="#c9ccd6"/>`;
   if (p.acc === 'pecas') s += [[41, 64], [45, 67], [40, 69], [79, 64], [75, 67], [80, 69]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.3" fill="#8a5a3c"/>`).join('');
+  if (p.pet !== 'nada') s += `<text x="89" y="101" text-anchor="middle" font-size="23">${p.pet}</text>`;
   return s + `</g></svg>`;
 }
 function showSetup() {
@@ -942,12 +988,13 @@ function showSetup() {
   renderSetup();
 }
 function renderSetup() {
-  const rows = [['skin', 'Piel', 'c'], ['hairStyle', 'Peinado', 'a'], ['hair', 'Color de pelo', 'c'], ['eyes', 'Ojos', 'f'], ['shadow', 'Sombra de ojos', 'c'], ['mouth', 'Boca', 'f'], ['cheekShape', 'Forma de mejillas', 'f'], ['cheekColor', 'Color de mejillas', 'c'], ['gems', 'Perlitas', 'f'], ['gemColor', 'Color de perlitas', 'c'], ['acc', 'Accesorio', 'a'], ['shirt', 'Camiseta', 'c'], ['bg', 'Fondo', 'c']];
+  const rows = [['skin', 'Piel', 'c'], ['hairStyle', 'Peinado', 'a'], ['hair', 'Color de pelo', 'c'], ['eyes', 'Ojos', 'f'], ['shadow', 'Sombra de ojos', 'c'], ['mouth', 'Boca', 'f'], ['cheekShape', 'Forma de mejillas', 'f'], ['cheekColor', 'Color de mejillas', 'c'], ['gems', 'Perlitas', 'f'], ['gemColor', 'Color de perlitas', 'c'], ['acc', 'Accesorio', 'a'], ['shirt', 'Camiseta', 'c'], ['print', 'Dibujo de la camiseta', 'e'], ['pet', 'Mascota', 'e'], ['bg', 'Fondo', 'c']];
   $('#setupBody').innerHTML = rows.map(([k, label, kind]) => `<div class="optrow"><div class="optlbl">${label}</div><div class="opts">${AV[k].map(v => {
     const sel = draft[k] === v ? ' sel' : '';
     if (kind === 'c') return v === 'nada'
       ? `<button class="sw none${sel}" data-opt="${k}" data-val="nada" aria-label="${label}: nada"></button>`
       : `<button class="sw${sel}" style="background:${v}" data-opt="${k}" data-val="${v}" aria-label="${label}"></button>`;
+    if (kind === 'e') return `<button class="avopt em${sel}" data-opt="${k}" data-val="${v}" aria-label="${label}: ${v}">${v === 'nada' ? '✕' : v}</button>`;
     return `<button class="avopt${sel}" data-opt="${k}" data-val="${v}" aria-label="${label}: ${v}">${avatarSVG({ ...draft, [k]: v }, '', kind === 'f' ? '32 38 56 56' : null)}</button>`;
   }).join('')}</div></div>`).join('');
   $('#setupPreview').innerHTML = avatarSVG(draft, '');
@@ -977,7 +1024,8 @@ function showHome() {
   $('#bubble').innerHTML = WORLDS.every(w => S.stars[w.id] > 0) && !S.boss ? '¡Ya visitaste todas las islas! El dragón te espera en el volcán. 🌋<small>Tócame si quieres un chiste.</small>' : `Hoy te recomiendo ${next.emoji} <b>${next.name}</b>.<small>Tócame si quieres un chiste.</small>`;
   if (kept) $('#bubble').innerHTML = `Dejaste tu cofre sin abrir, así que te guardé el sticker ${kept} en el álbum.`;
   $('#map').innerHTML = WORLDS.map(w => `<button class="isle" style="--c:${w.c}" data-world="${w.id}"><span class="blob">${w.emoji}</span><b>${w.name}</b><span class="st">${starStr(S.stars[w.id] || 0)}</span></button>`).join('') +
-    `<button class="isle boss" data-boss="1"><span class="blob">${S.boss ? '🏆' : '🐉'}</span><span><b>Volcán del Dragón</b><br><small>${S.boss ? '¡Ya lo venciste! ¿Otra batalla?' : 'El simulacro del examen: 15 retos de todas las islas'}</small></span></button>`;
+    `<button class="isle boss" data-boss="1"><span class="blob">${S.boss ? '🏆' : '🐉'}</span><span><b>Volcán del Dragón</b><br><small>${S.boss ? '¡Ya lo venciste! ¿Otra batalla?' : 'El simulacro del examen: 15 retos de todas las islas'}</small></span></button>` +
+    `<button class="isle boss tabl" data-act="mini"><span class="blob">${profile.pet && profile.pet !== 'nada' ? profile.pet : '🪵'}</span><span><b>Salto de Tablitas</b><br><small>Tu mascota salta de tablita en tablita durante un minuto. Tienes ${S.tokens} 🎟️</small></span></button>`;
   $('#allLinks').innerHTML = WORLDS.flatMap(w => w.links).map(linkHTML).join('');
 }
 function showWorld(id) {
@@ -1108,7 +1156,8 @@ function newSticker() {
 }
 function showResult() {
   const n = st.results.length, s = st.results.filter(r => r.star).length, ok = st.results.filter(r => r.ok).length, pct = s / Math.max(1, n);
-  if (S.day !== today()) { S.streak = S.day === today(1) ? S.streak + 1 : 1; S.day = today(); S.maxStreak = Math.max(S.maxStreak, S.streak); }
+  let giftN = 0, gift = null;
+  if (S.day !== today()) { S.streak = S.day === today(1) ? S.streak + 1 : 1; S.day = today(); S.maxStreak = Math.max(S.maxStreak, S.streak); giftN = S.streak; gift = newSticker(); }
   let head, body = '', stars = 0, chest = false;
   if (st.mode === 'boss') {
     const win = st.hp <= 0;
@@ -1125,10 +1174,11 @@ function showResult() {
     head = `<div class="resav">${avatarSVG(profile, stars ? 'happy' : 'think')}</div><h1>${WBY[st.w].name}</h1><div class="bigst">${starStr(stars)}</div><div class="score">${s}/${n}</div><p>${s} a la primera${ok > s ? ` y ${ok - s} al segundo intento` : ''}. Ganaste <b>${st.gc} 🪙</b>. ${msg}</p>`;
     if (stars === 3) { confetti(); sfx('win'); }
   }
+  S.tokens = Math.min(5, (S.tokens || 0) + 1);
   if (chest) st.chest = true;
   save();
   show('result');
-  $('#result').innerHTML = `<div class="res">${head}${chest ? `<div id="chestBox"><button class="chest" data-act="chest" aria-label="Abrir el cofre sorpresa">🎁</button><p><b>¡Ganaste un cofre! Tócalo para abrirlo.</b></p></div>` : ''}${body}${st.mode !== 'boss' && !stars ? `<button class="main alt" data-world="${st.w}">📖 Repasar la lección</button>` : ''}
+  $('#result').innerHTML = `<div class="res">${head}${giftN ? `<p class="gift">🔥 Racha de ${giftN} ${giftN === 1 ? 'día' : 'días'}: ${gift ? `¡sticker de regalo! <span class="giftst">${gift}</span>` : '¡ya tienes todos los stickers, toma 10 🪙!'}</p>` : ''}<p class="tok">🎟️ +1 ficha para Salto de Tablitas</p>${chest ? `<div id="chestBox"><button class="chest" data-act="chest" aria-label="Abrir el cofre sorpresa">🎁</button><p><b>¡Ganaste un cofre! Tócalo para abrirlo.</b></p></div>` : ''}${body}${st.mode !== 'boss' && !stars ? `<button class="main alt" data-world="${st.w}">📖 Repasar la lección</button>` : ''}
     <div class="resbtns"><button class="main alt" data-act="home">🗺️ Mapa</button><button class="main go" ${st.mode === 'boss' ? 'data-boss="1"' : `data-play="${st.w}"`}>Otra ronda</button></div></div>`;
 }
 function openChest(box) {
@@ -1139,13 +1189,108 @@ function openChest(box) {
 function showAlbum(msg) {
   show('album');
   $('#album').innerHTML = `<div class="bar"><button class="back" data-act="home">← Mapa</button><h2>📒 Mi álbum</h2><span class="pill">🪙 ${S.coins}</span></div>
-    <p>${S.stickers.length} de ${STICKERS.length + 1} stickers. Ganas un cofre cada vez que consigues estrellas en una isla.</p>
-    <div class="album">${[...STICKERS, '👑'].map(s => `<div class="stk${S.stickers.includes(s) ? '' : ' no'}">${S.stickers.includes(s) ? s : '❓'}</div>`).join('')}</div>
+    <p>${S.stickers.length} de ${STICKERS.length + 1} stickers. Ganas un cofre cada vez que consigues estrellas en una isla, y tu racha te regala un sticker cada día que juegas.</p>
+    ${[...ALBUM, ['👑 Especial', ['👑']]].map(([name, list]) => `<h3 class="colh">${name} <small>${list.filter(x => S.stickers.includes(x)).length}/${list.length}</small></h3><div class="album">${list.map(s => `<div class="stk${S.stickers.includes(s) ? '' : ' no'}">${S.stickers.includes(s) ? s : '❓'}</div>`).join('')}</div>`).join('')}
     <div id="chestBox" style="text-align:center">${msg || ''}</div>
     <button class="main" data-act="buy">🎰 Cofre sorpresa · 30 🪙</button>
     <h2 style="margin:26px 0 10px">🏅 Logros</h2>
     <div class="logros">${LOGROS.map(([e, t, d, f]) => `<div class="logro${f() ? '' : ' no'}"><span>${f() ? e : '🔒'}</span><div><b>${t}</b><small>${d}</small></div></div>`).join('')}</div>`;
 }
+
+/* ---------- Minijuego: Salto de Tablitas ---------- */
+let MG = null;
+function stopMini() { if (MG) { cancelAnimationFrame(MG.raf); MG = null; } }
+function showMini() {
+  stopMini(); show('mini');
+  const pet = profile.pet && profile.pet !== 'nada' ? profile.pet : null;
+  let body;
+  if (!pet) body = `<div class="prize">🪵</div><p>Para jugar necesitas una mascota en el hombro. ¡Ella es la que salta!</p><button class="main go" data-act="setup">Elegir mi mascota</button>`;
+  else if (S.tokens < 1) body = `<div class="prize">${pet}</div><p>No te quedan fichas 🎟️. Ganas una cada vez que terminas una ronda en una isla o una batalla con el dragón.</p><button class="main go" data-act="home">🗺️ Ir al mapa</button>`;
+  else body = `<div class="prize">${pet}</div><ul class="rules"><li>Tu mascota salta sola. Tú la mueves con ◀ y ▶.</li><li>Atrapa todas las ⭐ que puedas.</li><li>Cada 5 segundos una tablita se pone roja, tiembla y se cae.</li><li>Si caes a la lava, rebotas pero pierdes 1 ⭐.</li><li>Al minuto se caen todas las tablitas y termina el juego.</li></ul><button class="main go" data-act="miniplay">▶ Jugar · usa 1 🎟️</button>`;
+  $('#mini').innerHTML = `<div class="bar"><button class="back" data-act="home">← Mapa</button><h2>🪵 Salto de Tablitas</h2><span class="pill">🎟️ ${S.tokens}</span></div><div class="res">${body}${S.miniBest ? `<p>Tu récord: <b>${S.miniBest} ⭐</b></p>` : ''}</div>`;
+}
+function startMini() {
+  S.tokens--; save();
+  $('#mini').innerHTML = `<div class="bar"><button class="back" data-act="minibye">✕ Salir</button><h2>🪵 Salto de Tablitas</h2></div>
+    <div class="mhud"><span class="pill" id="mT">⏱ 60</span><span class="pill" id="mS">⭐ 0</span></div>
+    <canvas id="mC" width="360" height="440" aria-label="Juego de saltar tablitas"></canvas>
+    <div class="mctl"><button class="k" data-dir="-1" aria-label="Mover a la izquierda">◀</button><button class="k" data-dir="1" aria-label="Mover a la derecha">▶</button></div>`;
+  const c = $('#mC'), dpr = Math.min(2, window.devicePixelRatio || 1), W = 360, H = 440;
+  c.width = W * dpr; c.height = H * dpr;
+  const ctx = c.getContext('2d'); ctx.scale(dpr, dpr);
+  const planks = [385, 310, 235, 160, 85].map(y => ({ x: rnd(10, W - 90), y, y0: y, w: 80, st: 'ok', t: 1, vy: 0 }));
+  planks[0].x = 140;
+  MG = { ctx, W, H, planks, pet: { x: 180, y: planks[0].y - 14, vx: 0, vy: -620 }, dir: 0, t: 0, next: 5, score: 0, hot: 0, star: null, over: 0, endT: 0, emoji: profile.pet, last: performance.now() };
+  placeStar();
+  MG.raf = requestAnimationFrame(miniLoop);
+}
+function placeStar() { const ok = MG.planks.filter(p => p.st === 'ok' && Math.abs(p.y0 - MG.pet.y) > 60); const p = pick(ok.length ? ok : MG.planks); MG.star = { x: p.x + p.w / 2, y: p.y0 - 34 }; }
+function miniLoop(now) {
+  const g = MG; if (!g) return;
+  const dt = Math.min(.033, Math.max(0, (now - g.last) / 1000)); g.last = now;
+  if (!g.over) g.t += dt;
+  if (!g.over && g.t >= 60) { g.over = 1; g.planks.forEach(p => { if (p.st !== 'gone') p.st = 'fall'; }); sfx('win'); }
+  if (!g.over && g.t >= g.next) { g.next += 5; shuffle(g.planks.filter(p => p.st === 'ok')).slice(0, g.t > 30 ? 2 : 1).forEach(p => { p.st = 'shake'; p.t = 0; }); }
+  for (const p of g.planks) {
+    p.t += dt;
+    if (p.st === 'shake' && p.t > 1) { p.st = 'fall'; p.vy = 0; }
+    if (p.st === 'fall') { p.vy += 900 * dt; p.y += p.vy * dt; if (p.y > g.H + 40 && !g.over) { p.st = 'gone'; p.t = 0; } }
+    if (p.st === 'gone' && p.t > 1.5 && !g.over) { p.st = 'ok'; p.y = p.y0; p.vy = 0; p.x = rnd(10, g.W - 90); p.t = 0; }
+  }
+  const a = g.pet, py = a.y;
+  a.vx = g.dir * 210; a.vy += 1400 * dt; a.x += a.vx * dt; a.y += a.vy * dt;
+  if (a.x < -12) a.x = g.W + 12; if (a.x > g.W + 12) a.x = -12;
+  if (a.vy > 0 && !g.over) for (const p of g.planks) if ((p.st === 'ok' || p.st === 'shake') && a.x > p.x - 10 && a.x < p.x + p.w + 10 && py + 14 <= p.y + 2 && a.y + 14 >= p.y) { a.y = p.y - 14; a.vy = -620; break; }
+  if (!g.over && g.star && Math.abs(a.x - g.star.x) < 26 && Math.abs(a.y - g.star.y) < 28) { g.score++; sfx('ok'); placeStar(); }
+  if (a.y > g.H - 28 && a.vy > 0 && !g.over) { a.y = g.H - 28; a.vy = -880; g.hot = .9; if (g.score > 0) g.score--; sfx('bad'); }
+  if (g.hot > 0) g.hot -= dt;
+  if (g.over) { g.endT += dt; if (g.endT > 1.8) { endMini(); return; } }
+  drawMini();
+  $('#mT').textContent = '⏱ ' + Math.max(0, Math.ceil(60 - g.t));
+  $('#mS').textContent = '⭐ ' + g.score;
+  g.raf = requestAnimationFrame(miniLoop);
+}
+function drawMini() {
+  const g = MG, c = g.ctx;
+  const sky = c.createLinearGradient(0, 0, 0, g.H); sky.addColorStop(0, '#8fd3f4'); sky.addColorStop(1, '#e0f7fa');
+  c.fillStyle = sky; c.fillRect(0, 0, g.W, g.H);
+  c.fillStyle = 'rgba(255,255,255,.8)';
+  [[50, 60], [240, 130], [120, 270]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 16, 0, 7); c.arc(x + 20, y - 8, 20, 0, 7); c.arc(x + 42, y, 16, 0, 7); c.fill(); });
+  c.fillStyle = '#ff7043'; c.fillRect(0, g.H - 16, g.W, 16);
+  c.fillStyle = '#ffab40'; for (let x = 0; x < g.W; x += 24) { c.beginPath(); c.arc(x + 12 + Math.sin(g.t * 3 + x) * 3, g.H - 16, 9, Math.PI, 0); c.fill(); }
+  for (const p of g.planks) {
+    if (p.st === 'gone') continue;
+    const sh = p.st === 'shake' ? Math.sin(p.t * 50) * 3 : 0;
+    c.globalAlpha = p.st === 'ok' && p.t < .4 ? p.t / .4 : 1;
+    c.fillStyle = p.st === 'shake' ? '#e2432a' : '#a8703a';
+    c.beginPath(); if (c.roundRect) c.roundRect(p.x + sh, p.y, p.w, 12, 5); else c.rect(p.x + sh, p.y, p.w, 12); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.28)'; c.fillRect(p.x + sh + 6, p.y + 2, p.w - 12, 3);
+    c.globalAlpha = 1;
+  }
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  if (g.star && !g.over) { c.font = '26px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.fillText('⭐', g.star.x, g.star.y + Math.sin(g.t * 4) * 3); }
+  c.font = '34px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.fillText(g.emoji, g.pet.x, g.pet.y);
+  if (g.hot > 0) { c.font = '22px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; c.fillText('🔥', g.pet.x, g.pet.y + 24); c.font = '800 18px sans-serif'; c.fillStyle = '#c2321c'; c.fillText('−1 ⭐', g.pet.x, g.pet.y - 28); }
+  if (g.over === 1) { c.font = '800 36px sans-serif'; c.fillStyle = '#14304a'; c.fillText('¡Tiempo!', g.W / 2, g.H / 2); }
+}
+function endMini() {
+  const g = MG; stopMini();
+  const coins = Math.min(10, g.score), rec = g.score > (S.miniBest || 0);
+  S.coins += coins; if (rec) S.miniBest = g.score; save();
+  if (rec) confetti(['⭐', g.emoji]);
+  $('#mini').innerHTML = `<div class="res"><div class="prize">${g.emoji}</div><h1>¡Se acabó el minuto!</h1><div class="score">${g.score} ⭐</div>
+    <p>${rec ? '¡Nuevo récord! ' : ''}Ganaste <b>${coins} 🪙</b>. ${S.tokens > 0 ? `Te quedan ${S.tokens} 🎟️.` : 'Para volver a jugar, gana otra ficha terminando una ronda.'}</p>
+    <div class="resbtns"><button class="main alt" data-act="home">🗺️ Mapa</button>${S.tokens > 0 ? '<button class="main go" data-act="miniplay">Jugar otra vez</button>' : ''}</div></div>`;
+}
+document.addEventListener('pointerdown', e => {
+  if (!MG) return;
+  const b = e.target.closest('[data-dir]');
+  if (b) { MG.dir = +b.dataset.dir; e.preventDefault(); }
+  else if (e.target.id === 'mC') { const r = e.target.getBoundingClientRect(); MG.dir = e.clientX < r.left + r.width / 2 ? -1 : 1; e.preventDefault(); }
+});
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { if (MG) MG.dir = 0; }));
+document.addEventListener('keydown', e => { if (!MG) return; if (e.key === 'ArrowLeft') { MG.dir = -1; e.preventDefault(); } if (e.key === 'ArrowRight') { MG.dir = 1; e.preventDefault(); } });
+document.addEventListener('keyup', e => { if (MG && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) MG.dir = 0; });
 
 /* ---------- Entrada ---------- */
 document.addEventListener('click', e => {
@@ -1162,6 +1307,8 @@ document.addEventListener('click', e => {
     case 'save': return saveProfile();
     case 'random': draft = randomProfile($('#nameIn').value); renderSetup(); return;
     case 'check': if (st) action(); return;
+    case 'mini': case 'minibye': return showMini();
+    case 'miniplay': return S.tokens > 0 ? startMini() : showMini();
     case 'album': return showAlbum();
     case 'sound': S.sound = !S.sound; save(); showHome(); sfx('ok'); return;
     case 'joke': $('#bubble').textContent = pick(JOKES); return;
