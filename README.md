@@ -1,1 +1,18 @@
-# chispas
+# Chispas ✨
+
+Juegos y repasos interactivos en HTML para estudiar en casa. Cada material es una sola página que se abre en el navegador, sin instalar nada.
+
+**Ver en línea:** https://gdelaossat.github.io/chispas/
+
+## Materiales
+
+| Material | Tema | Enlace |
+|---|---|---|
+| 🏝️ Aventura Mathe | Matemáticas de 3.º (español y alemán): recta numérica hasta 1000, comparación, números vecinos, euros y céntimos, problemas y medidas | [Abrir](https://gdelaossat.github.io/chispas/aventura-mathe/) |
+
+## Cómo agregar un material
+
+1. Crea una carpeta con el nombre del material y pon dentro su `index.html`.
+2. Agrega una tarjeta en `index.html` de la raíz y una fila en la tabla de arriba.
+
+El progreso y el avatar de cada juego se guardan solo en el navegador de quien juega.

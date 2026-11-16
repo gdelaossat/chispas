@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Juego de repaso de matemáticas: recta numérica, comparación, números vecinos, euros y céntimos, problemas y medidas.">
+<title>Aventura Mathe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Mapa de un archipiélago: cada tema es una isla; el juego ocurre sobre una "carta" de arena */
+:root{
+  --sea:#d9f1f4; --sea2:#bfe6ec; --ink:#14304a; --muted:#4f6a84; --card:#ffffff;
+  --sand:#fff6dc; --sheetline:#e6d199; --red:#e2432a; --teal:#0b8a80; --purple:#7a4fd0;
+  --star:#f2a900; --ok:#17864a; --bad:#d63a2f; --key:#ffffff; --keyedge:#b9cbd8;
+  --display:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
+  --body:'Nunito','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --sea:#0b1b2a; --sea2:#11293d; --ink:#eaf3f9; --muted:#9db4c8; --card:#172c41;
+    --sand:#1d3247; --sheetline:#37526c; --red:#ff7d63; --teal:#3fd0c1; --purple:#b99bff;
+    --star:#ffd04d; --ok:#4fd98a; --bad:#ff7a6b; --key:#1f364c; --keyedge:#3a5670; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --sea:#0b1b2a; --sea2:#11293d; --ink:#eaf3f9; --muted:#9db4c8; --card:#172c41;
+  --sand:#1d3247; --sheetline:#37526c; --red:#ff7d63; --teal:#3fd0c1; --purple:#b99bff;
+  --star:#ffd04d; --ok:#4fd98a; --bad:#ff7a6b; --key:#1f364c; --keyedge:#3a5670; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background-color:var(--sea);
+  background-image:radial-gradient(circle at 12px 12px,var(--sea2) 3px,transparent 4px),radial-gradient(circle at 36px 30px,var(--sea2) 2px,transparent 3px);
+  background-size:48px 40px;color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.4;font-weight:500;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.wrap{max-width:780px;margin:0 auto;padding-block:16px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hidden{display:none !important}
+h1,h2,h3{font-family:var(--display);line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(34px,9vw,52px);font-weight:800}
+h2{font-size:26px;font-weight:700}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
+#fx span{position:absolute;top:-40px;animation:fall 2.6s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.avbtn{width:64px;height:64px;border-radius:50%;border:3px solid var(--ink);padding:0;overflow:hidden;background:var(--card);cursor:pointer;flex:none}
+.av{width:100%;height:100%;display:block}
+.who{flex:1;min-width:150px}
+.hi{font-family:var(--display);font-weight:800;font-size:26px;line-height:1}
+.lvl{font-size:15px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px;margin-top:4px}
+.xpbar{flex:1;max-width:140px;height:10px;border-radius:10px;background:var(--sea2);border:1.5px solid var(--ink);overflow:hidden}
+.xpbar i{display:block;height:100%;background:var(--star)}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:var(--card);border:2px solid var(--ink);border-radius:30px;padding:3px 12px;font-weight:800;font-size:16px;white-space:nowrap}
+button.pill{cursor:pointer}
+.title{margin:22px 0 4px}
+.title h1{color:var(--red)}
+.title p{margin:6px 0 0;color:var(--muted);max-width:50ch}
+.mascot{display:flex;align-items:flex-end;gap:10px;margin:16px 0 18px}
+.masc{font-size:54px;line-height:1;background:none;border:none;cursor:pointer;padding:0;transition:transform .15s}
+.masc:active{transform:scale(1.25) rotate(-8deg)}
+.bubble{background:var(--card);border:2px solid var(--ink);border-radius:18px 18px 18px 4px;padding:10px 14px;font-weight:700;font-size:16px;flex:1;min-width:0}
+.bubble small{display:block;color:var(--muted);font-weight:500}
+
+/* Mapa */
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.isle{
+  background:var(--sand);border:3px solid var(--ink);cursor:pointer;padding:16px 10px 12px;text-align:center;
+  border-radius:44% 56% 52% 48% / 46% 44% 56% 54%;display:flex;flex-direction:column;align-items:center;gap:2px;
+  box-shadow:0 6px 0 var(--c);transition:transform .12s;min-height:170px;justify-content:center
+}
+.isle:nth-child(even){border-radius:56% 44% 46% 54% / 52% 56% 44% 48%;transform:translateY(10px)}
+.isle:active{transform:translateY(4px)}
+.blob{font-size:44px;line-height:1}
+.isle b{font-family:var(--display);font-size:20px;line-height:1.05;font-weight:700}
+.isle small{font-size:13px;color:var(--muted);font-weight:700}
+.st{font-size:20px;letter-spacing:2px;color:var(--muted)}
+.st .on{color:var(--star)}
+.boss{grid-column:1/-1;border-radius:30px;background:var(--ink);color:var(--sea);min-height:0;flex-direction:row;gap:14px;padding:16px;text-align:left;box-shadow:0 6px 0 var(--red);transform:none !important;margin-top:8px}
+.boss .blob{font-size:56px}
+.boss b{font-size:24px;color:var(--sea)}
+.boss small{color:var(--sea2)}
+.boss:active{translate:0 4px}
+details.all{margin-top:26px;background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:10px 14px}
+details.all summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:20px}
+
+/* Isla (tema) */
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.back{border:2px solid var(--ink);background:var(--card);border-radius:30px;padding:5px 14px;cursor:pointer;font-weight:800;font-size:16px}
+.whead{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.whead .blob{font-size:64px}
+.whead h1{color:var(--c)}
+.de{color:var(--purple);font-weight:800;margin:2px 0}
+.learn{background:var(--sand);border:2px solid var(--sheetline);border-radius:16px;padding:16px;margin-top:18px}
+.learn h2{color:var(--red);margin-bottom:8px}
+.learn h3{font-size:20px;margin:14px 0 4px;color:var(--teal)}
+.learn p{margin:6px 0}
+.learn ul{margin:6px 0;padding-left:22px}
+.learn li{margin:3px 0}
+.learn .ex{background:var(--card);border-radius:12px;padding:8px 12px;margin:8px 0;font-weight:800;font-size:20px;text-align:center}
+.learn .ex small{display:block;font-weight:500;font-size:15px;color:var(--muted)}
+.voc{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.voc span{background:var(--card);border:1.5px solid var(--purple);border-radius:20px;padding:2px 10px;font-size:15px}
+.voc b{color:var(--purple)}
+.links{display:grid;gap:10px;margin-top:10px}
+.link{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:10px 12px;text-decoration:none;color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.link .ic{font-size:28px}
+.link .tx{flex:1;min-width:0}
+.link b{display:block;line-height:1.15}
+.link small{color:var(--muted);font-size:13px;word-break:break-all}
+.link .go{font-weight:800;color:var(--teal)}
+
+/* Juego */
+.bar h2{flex:1;font-size:22px;min-width:0}
+.mini{width:42px;height:42px;flex:none;border-radius:50%;overflow:hidden}
+.dots{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 12px}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);background:var(--card)}
+.dot.now{background:var(--ink)} .dot.s{background:var(--star);border-color:var(--star)}
+.dot.y{background:var(--ok);border-color:var(--ok)} .dot.n{background:var(--bad);border-color:var(--bad)}
+.dragon{display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--sea);border-radius:16px;padding:8px 14px;margin-bottom:12px}
+.dragon .dr{font-size:48px;line-height:1}
+.dragon.hit .dr{animation:shake .5s}
+@keyframes shake{20%{transform:translateX(-8px) rotate(-8deg)}40%{transform:translateX(8px) rotate(8deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.hp{flex:1}
+.hp b{font-family:var(--display);font-size:18px}
+.hpbar{height:14px;border-radius:10px;background:var(--sea2);overflow:hidden;margin-top:2px}
+.hpbar i{display:block;height:100%;background:var(--red);transition:width .4s}
+.sheet{background:var(--sand);border:2px solid var(--sheetline);padding:18px 14px;border-radius:16px}
+.tag{display:inline-block;font-size:14px;font-weight:800;border:2px solid var(--c,var(--teal));color:var(--c,var(--teal));border-radius:20px;padding:1px 10px;margin-bottom:8px;background:var(--card)}
+.prompt{font-size:20px;margin:0 0 12px;font-weight:700}
+.prompt strong{color:var(--red);font-size:24px;white-space:nowrap}
+.nl{width:100%;height:auto;display:block;color:var(--ink);touch-action:manipulation}
+.nl .lbl{font:700 36px var(--body);fill:currentColor}
+.nl .mtxt{font:800 32px var(--body);fill:currentColor}
+.nl.tap .hit{cursor:pointer}
+.tapnote{text-align:center;color:var(--muted);font-size:16px;margin:6px 0 0}
+.nudge{display:flex;gap:10px;justify-content:center;margin-top:8px}
+.nudge .k{padding:0 14px;height:46px}
+.hintbtn{border:2px dashed var(--teal);color:var(--teal);background:transparent;border-radius:20px;padding:3px 12px;font-size:15px;cursor:pointer;margin-left:6px;font-weight:800}
+.ansrow{display:flex;justify-content:center;align-items:flex-start;gap:8px;margin-top:12px;flex-wrap:wrap}
+.ansrow .pre,.ansrow .unit{font-size:26px;font-weight:800;line-height:58px;white-space:nowrap}
+.zahl{font-size:30px}
+.slotcol{display:flex;flex-direction:column;align-items:center;gap:2px}
+.slotcol small{font-size:12px;color:var(--muted);font-weight:700}
+.slot{min-width:96px;height:58px;border:3px double var(--ink);border-radius:12px;background:var(--card);font-size:28px;font-weight:800;cursor:pointer;padding:0 10px;display:inline-grid;place-items:center}
+.slot.active{border:3px solid var(--teal);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 30%,transparent)}
+.slot.ok{border:3px solid var(--ok);color:var(--ok)} .slot.bad{border:3px solid var(--bad);color:var(--bad)}
+.seq{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.seq span{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:4px 12px;font-size:24px;font-weight:800}
+.seq span.q{border-style:dashed;color:var(--red)}
+.cmp{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
+.big{font-size:clamp(22px,6vw,36px);font-weight:800;text-align:center}
+.cmp .slot{min-width:64px;width:64px;font-size:32px;cursor:default}
+.cmp .blk{width:min(31vw,230px);height:auto;display:block}
+.signs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sign,.opt{border:2px solid var(--ink);background:var(--card);border-radius:14px;padding:8px 6px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);font-weight:800}
+.sign b{display:block;font-size:34px;line-height:1}
+.sign small{font-size:13px;color:var(--muted)}
+.sign:disabled,.opt:disabled{cursor:default;opacity:.45;box-shadow:none}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+.opt{font-size:20px;min-height:58px}
+.opt.right{background:var(--ok);border-color:var(--ok);color:#fff;opacity:1}
+.ordslots{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:6px 0 16px}
+.ordslots .slot{min-width:84px;font-size:20px;height:52px}
+.ordslots .op{font-size:26px;font-weight:800;color:var(--red)}
+.chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.chip{border:2px solid var(--ink);background:var(--card);border-radius:30px;padding:8px 16px;font-size:22px;font-weight:800;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.chip:disabled{opacity:.25;cursor:default;box-shadow:none}
+.fb{min-height:28px;margin:14px 2px 0;font-size:18px;font-weight:700}
+.fb.ok{color:var(--ok)} .fb.bad{color:var(--bad)} .fb.hint{color:var(--teal)}
+.fb .expl{color:var(--ink);margin-top:6px;font-size:17px;font-weight:500}
+.gain{background:var(--star);color:#3b2a05;border-radius:20px;padding:1px 9px;font-size:15px;margin-left:4px;white-space:nowrap}
+.combo{color:var(--red);white-space:nowrap}
+.miniline{max-width:520px;margin-top:6px}
+.dgbox{display:inline-flex;flex-direction:column;gap:4px;margin-top:8px}
+.dgrow{display:flex;gap:3px;align-items:center}
+.dg{width:30px;height:38px;display:grid;place-items:center;border:1px solid var(--sheetline);background:var(--card);font-size:22px;font-weight:800}
+.dg.empty{border-style:dashed;background:transparent}
+.dg.hl{background:var(--red);color:#fff;border-color:var(--red)}
+.dgn{font-size:13px;color:var(--muted);margin-left:8px}
+.pad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px auto 0;max-width:460px}
+.k.check{grid-column:span 3;background:var(--red);border-color:color-mix(in srgb,var(--red) 55%,#000);color:#fff;font-family:var(--display);font-size:21px}
+.k.check.wide{grid-column:span 4}
+.k{height:52px;border:2px solid var(--keyedge);border-bottom-width:4px;background:var(--key);border-radius:12px;font-size:26px;font-weight:800;cursor:pointer}
+.k:active{border-bottom-width:2px;transform:translateY(2px)}
+.k.small{font-size:15px}
+.main{display:block;width:100%;max-width:420px;margin:16px auto 0;padding:13px;border:none;border-radius:16px;background:var(--red);color:#fff;font-family:var(--display);font-size:24px;font-weight:700;cursor:pointer;box-shadow:0 5px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.main:active{transform:translateY(3px);box-shadow:0 2px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.main.go{background:var(--teal);box-shadow:0 5px 0 color-mix(in srgb,var(--teal) 55%,#000)}
+.main.alt{background:var(--card);color:var(--ink);border:2px solid var(--ink);box-shadow:0 5px 0 var(--ink)}
+:root[data-theme="dark"] .k.check,:root[data-theme="dark"] .main,:root[data-theme="dark"] .opt.right{color:#06202c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .k.check,:root:not([data-theme="light"]) .main,:root:not([data-theme="light"]) .opt.right{color:#06202c}}
+.main.alt{color:var(--ink) !important}
+
+/* Dinero */
+.money{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:6px 0}
+.bill{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:84px;height:46px;border-radius:6px;color:#fff;font-weight:800;font-size:22px;border:2px solid rgba(0,0,0,.3);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35);line-height:1}
+.bill small{font-size:9px;letter-spacing:1px}
+.b5{background:#71857b}.b10{background:#d24a42}.b20{background:#3771c4}.b50{background:#de7a17}.b100{background:#24904f}.b200{background:#b8930a}
+.coin{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;font-weight:800;font-size:14px;color:#3b2a05;line-height:1;border:2px solid rgba(0,0,0,.35)}
+.coin small{font-size:9px}
+.cc{background:radial-gradient(circle at 35% 30%,#eaa676,#b5642f)}
+.cg{background:radial-gradient(circle at 35% 30%,#ffe680,#d7a51c)}
+.s100{background:radial-gradient(circle,#dfe3e8 0 50%,#e3b93a 54%)}
+.s200{background:radial-gradient(circle,#e9c24a 0 50%,#cfd5dc 54%)}
+.s1{width:30px;height:30px}.s2{width:34px;height:34px}.s5{width:38px;height:38px}.s10{width:36px;height:36px}.s20{width:40px;height:40px}.s50{width:44px;height:44px}.s100{width:44px;height:44px}.s200{width:48px;height:48px}
+.opt .money{pointer-events:none}
+.board{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;margin:0 auto 10px;max-width:420px}
+.board h4{margin:0 0 4px;font-family:var(--display);font-size:18px;color:var(--teal)}
+.board div{display:flex;justify-content:space-between;gap:10px;font-weight:700;border-top:1px dashed var(--sheetline);padding:3px 0}
+.board i{font-style:normal;color:var(--purple);font-size:14px}
+
+/* Resultado y álbum */
+.res{text-align:center;padding-top:10px}
+.resav{width:110px;height:110px;margin:0 auto;border-radius:50%;overflow:hidden}
+.score{font-family:var(--display);font-size:70px;font-weight:800;color:var(--red);line-height:1;margin:6px 0}
+.bigst{font-size:44px;letter-spacing:6px;color:var(--muted)} .bigst .on{color:var(--star)}
+.res p{max-width:44ch;margin:10px auto}
+.chest{font-size:84px;background:none;border:none;cursor:pointer;animation:wob 1s infinite;line-height:1}
+@keyframes wob{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg) scale(1.08)}}
+.prize{font-size:90px;line-height:1;animation:pop .5s}
+@keyframes pop{0%{transform:scale(0) rotate(-90deg)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+.topics{max-width:420px;margin:14px auto;text-align:left}
+.trow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--sheetline);padding:7px 2px;gap:8px}
+.trow button{border:2px solid var(--teal);color:var(--teal);background:transparent;border-radius:20px;padding:2px 10px;cursor:pointer;font-size:14px;font-weight:800}
+.resbtns{display:flex;gap:10px;max-width:420px;margin:18px auto 0}
+.resbtns .main{margin:0}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px;margin:12px 0 20px}
+.stk{aspect-ratio:1;display:grid;place-items:center;font-size:36px;background:var(--card);border:2px solid var(--ink);border-radius:16px}
+.stk.no{opacity:.45;border-style:dashed;font-size:26px}
+.logros{display:grid;gap:8px}
+.logro{display:flex;gap:12px;align-items:center;background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:8px 12px}
+.logro span{font-size:30px}
+.logro.no{opacity:.5;border-style:dashed}
+.logro small{display:block;color:var(--muted)}
+
+/* Avatar */
+.setupgrid{display:grid;grid-template-columns:210px 1fr;gap:22px;align-items:start;margin-top:14px}
+@media (max-width:600px){.setupgrid{grid-template-columns:1fr}}
+.prevcol{text-align:center}
+.prev{width:160px;height:160px;margin:0 auto 12px;border-radius:50%;overflow:hidden}
+.namelbl{display:block;font-weight:800;margin-bottom:4px}
+#nameIn{width:100%;font:inherit;font-size:22px;font-weight:800;padding:8px 12px;border:3px double var(--ink);border-radius:12px;background:var(--card);color:var(--ink);text-align:center}
+.prevcol .hintbtn{margin-top:12px}
+.optrow{margin-bottom:14px}
+.optlbl{font-weight:800;font-size:16px;margin-bottom:5px}
+.optrow .opts{display:flex;flex-wrap:wrap;gap:9px;margin:0}
+.sw{width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0}
+.avopt{width:58px;height:58px;padding:0;border:2px solid var(--ink);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.sw.none{background:var(--card) linear-gradient(135deg,transparent 44%,var(--red) 44%,var(--red) 56%,transparent 56%)}
+.sw.sel,.avopt.sel{outline:4px solid var(--teal);outline-offset:2px}
+@media (max-height:720px){.k{height:46px}.pad{gap:6px;margin-top:10px}.sheet{padding:12px 12px}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div id="fx" aria-hidden="true"></div>
+<div class="wrap">
+  <section id="setup" class="hidden">
+    <h1>Crea tu avatar</h1>
+    <div class="setupgrid">
+      <div class="prevcol">
+        <div class="prev" id="setupPreview"></div>
+        <label class="namelbl" for="nameIn">¿Cómo te llamas?</label>
+        <input id="nameIn" maxlength="16" autocomplete="off" placeholder="Tu nombre">
+        <button class="hintbtn" data-act="random">🎲 Sorpréndeme</button>
+      </div>
+      <div id="setupBody"></div>
+    </div>
+    <p class="fb bad" id="setupMsg"></p>
+    <button class="main go" data-act="save">¡Listo!</button>
+  </section>
+
+  <section id="home" class="hidden">
+    <div class="hud" id="hud"></div>
+    <div class="title">
+      <h1>Aventura Mathe</h1>
+      <p>Siete islas, un dragón y todo lo que entra en el examen. Cada ronda trae retos nuevos.</p>
+    </div>
+    <div class="mascot"><button class="masc" data-act="joke" aria-label="Zifri el erizo: toca para un chiste">🦔</button><div class="bubble" id="bubble"></div></div>
+    <div class="map" id="map"></div>
+    <details class="all"><summary>📚 Todo el material de apoyo</summary><div class="links" id="allLinks"></div></details>
+  </section>
+
+  <section id="world" class="hidden"></section>
+
+  <section id="play" class="hidden">
+    <div class="bar">
+      <button class="back" data-act="quit">✕ Salir</button>
+      <span class="mini" id="barAv"></span>
+      <h2 id="modeTitle"></h2>
+      <span class="pill" id="coinCount"></span>
+    </div>
+    <div id="dragonBox"></div>
+    <div class="dots" id="dots"></div>
+    <div class="sheet">
+      <div id="qarea"></div>
+      <div class="fb" id="fb" aria-live="polite"></div>
+    </div>
+    <div class="pad hidden" id="pad"></div>
+    <button class="main" id="mainBtn">Comprobar</button>
+  </section>
+
+  <section id="result" class="hidden"></section>
+  <section id="album" class="hidden"></section>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const narrow = () => window.innerWidth < 600;
+const rep = (n, f) => Array.from({ length: n }, f);
+const uniq = a => [...new Set(a)];
+const eur = c => Math.floor(c / 100) + ',' + String(c % 100).padStart(2, '0') + ' €';
+const PRAISE = ['¡Muy bien!', '¡Exacto!', '¡Eso es!', '¡Perfecto!', '¡Excelente!', '¡Súper!', '¡Toll!', '¡Sehr gut!'];
+const SECTIONS = ['setup', 'home', 'world', 'play', 'result', 'album'];
+function show(id) { SECTIONS.forEach(x => $('#' + x).classList.toggle('hidden', x !== id)); window.scrollTo(0, 0); }
+
+/* ---------- Progreso guardado ---------- */
+let S = { coins: 0, xp: 0, stars: {}, stickers: [], day: '', streak: 0, maxStreak: 0, maxCombo: 0, boss: false, sound: true };
+try { S = { ...S, ...(JSON.parse(localStorage.getItem('aventura-estado')) || {}) }; } catch (e) {}
+const save = () => { try { localStorage.setItem('aventura-estado', JSON.stringify(S)); } catch (e) {} };
+
+/* ---------- Sonido y confeti ---------- */
+let AC = null;
+function sfx(k) {
+  if (!S.sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const n = AC.currentTime;
+    const seq = { ok: [[660, 0], [880, .09]], bad: [[200, 0]], win: [[523, 0], [659, .1], [784, .2], [1047, .3]], chest: [[784, 0], [988, .08], [1175, .16], [1568, .26]] }[k];
+    seq.forEach(([f, t]) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = k === 'bad' ? 'triangle' : 'sine'; o.frequency.value = f; g.gain.setValueAtTime(.12, n + t); g.gain.exponentialRampToValueAtTime(.001, n + t + .2); o.connect(g); g.connect(AC.destination); o.start(n + t); o.stop(n + t + .22); });
+  } catch (e) {}
+}
+function confetti(set) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < 28; i++) {
+    const s = document.createElement('span'); s.textContent = pick(set || ['🎉', '⭐', '✨', '🎈', '💜', '🪙']);
+    s.style.left = rnd(0, 95) + '%'; s.style.animationDelay = (Math.random() * .7) + 's'; s.style.fontSize = rnd(18, 34) + 'px';
+    $('#fx').appendChild(s); setTimeout(() => s.remove(), 3600);
+  }
+}
+
+/* ---------- Recta numérica en SVG ---------- */
+function lineSVG(o) {
+  const W = 1000, m = 46, H = 175, Y = 105;
+  const dx = (W - 2 * m) / o.count, X = i => m + i * dx;
+  const big = o.step * (o.labelEvery || 10);
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="nl${o.tap ? ' tap' : ''}${o.cls ? ' ' + o.cls : ''}" role="img" aria-label="Recta numérica de ${o.start} a ${o.start + o.count * o.step}">`;
+  s += `<line x1="${m - 30}" y1="${Y}" x2="${W - m + 30}" y2="${Y}" stroke="currentColor" stroke-width="4"/>`;
+  s += `<polygon points="${m - 40},${Y} ${m - 20},${Y - 11} ${m - 20},${Y + 11}" fill="currentColor"/>`;
+  s += `<polygon points="${W - m + 40},${Y} ${W - m + 20},${Y - 11} ${W - m + 20},${Y + 11}" fill="currentColor"/>`;
+  for (let i = 0; i <= o.count; i++) {
+    const v = o.start + i * o.step;
+    const major = o.labelAll || v % big === 0, mid = !major && v % (big / 2) === 0;
+    const h = major ? 22 : mid ? 15 : 9;
+    s += `<line x1="${X(i)}" y1="${Y - h}" x2="${X(i)}" y2="${Y + h}" stroke="currentColor" stroke-width="${major ? 4 : 3}"/>`;
+    if (major) s += `<text x="${X(i)}" y="${Y + 60}" text-anchor="middle" class="lbl">${v}</text>`;
+  }
+  if (o.hops) {
+    const { from, to } = o.hops, dir = to > from ? 1 : -1;
+    for (let i = from; i !== to; i += dir) {
+      const x1 = X(i), x2 = X(i + dir);
+      s += `<path d="M${x1} ${Y - 5} Q${(x1 + x2) / 2} ${Y - 42} ${x2} ${Y - 5}" fill="none" stroke="var(--teal)" stroke-width="3.5"/>`;
+    }
+  }
+  (o.marks || []).forEach(k => {
+    const x = X(k.pos);
+    s += `<g style="color:${k.color}"><line x1="${x}" y1="${k.text ? 44 : 20}" x2="${x}" y2="${Y - 32}" stroke="currentColor" stroke-width="5"/>`;
+    s += `<polygon points="${x - 12},${Y - 36} ${x + 12},${Y - 36} ${x},${Y - 12}" fill="currentColor"/>`;
+    if (k.text !== undefined) s += `<rect x="${x - 50}" y="2" width="100" height="42" rx="9" fill="var(--card)" stroke="currentColor" stroke-width="3"/><text x="${x}" y="34" text-anchor="middle" class="mtxt">${k.text}</text>`;
+    s += `</g>`;
+  });
+  if (o.tap) s += `<rect class="hit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/>`;
+  return s + `</svg>`;
+}
+const nearestLabel = q => {
+  const ti = (q.target - q.start) / q.step, lo = Math.floor(ti / 10) * 10;
+  return (ti - lo <= 5) ? lo : lo + 10;
+};
+
+
+/* ---------- Dibujos: dinero, bloques y regla ---------- */
+function moneyHTML(items) {
+  return '<div class="money">' + items.map(v => v >= 500
+    ? `<span class="bill b${v / 100}">${v / 100}<small>EURO</small></span>`
+    : `<span class="coin ${v >= 100 ? '' : v >= 10 ? 'cg' : 'cc'} s${v}">${v >= 100 ? v / 100 + '€' : v}${v >= 100 ? '' : '<small>ct</small>'}</span>`).join('') + '</div>';
+}
+function moneySet() {
+  const items = [];
+  rep(rnd(1, 3), () => items.push(pick([500, 500, 1000, 1000, 2000, 2000, 5000])));
+  if (Math.random() < .12) items.push(10000);
+  rep(rnd(0, 2), () => items.push(pick([100, 200])));
+  let c = 0; rep(rnd(0, 3), () => { const v = pick([1, 2, 5, 10, 20, 50]); if (c + v < 100) { c += v; items.push(v); } });
+  items.sort((a, b) => b - a);
+  return { items, total: items.reduce((a, b) => a + b, 0) };
+}
+function comboFor(eurosTotal) {
+  const out = []; let r = eurosTotal;
+  while (r > 0) { const fit = [20, 10, 5, 2, 1].filter(d => d <= r); const d = Math.random() < .7 ? fit[0] : pick(fit.slice(0, 3)); out.push(d * 100); r -= d; }
+  return out;
+}
+function blocksSVG(n) {
+  const h = Math.floor(n / 100), t = Math.floor(n % 100 / 10), o = n % 10;
+  let s = `<svg viewBox="0 0 212 84" class="blk" role="img" aria-label="Bloques de centenas, decenas y unidades">`;
+  for (let i = 0; i < h; i++) { const x = (i % 3) * 40, y = Math.floor(i / 3) * 44; s += `<rect x="${x}" y="${y}" width="36" height="36" rx="3" fill="#2e9e5b" stroke="#17643a" stroke-width="2"/><path d="M${x + 12} ${y}v36M${x + 24} ${y}v36M${x} ${y + 12}h36M${x} ${y + 24}h36" stroke="#17643a" stroke-width="1" fill="none"/>`; }
+  for (let i = 0; i < t; i++) s += `<rect x="${124 + i * 9.5}" y="0" width="7" height="36" rx="2" fill="#d9534a" stroke="#8f2b24" stroke-width="1"/>`;
+  for (let i = 0; i < o; i++) s += `<rect x="${124 + (i % 5) * 10}" y="${46 + Math.floor(i / 5) * 10}" width="7" height="7" rx="1.5" fill="#3c78c8" stroke="#1f4c8a" stroke-width="1"/>`;
+  return s + `</svg>`;
+}
+function rulerSVG(o) {
+  const W = narrow() ? 580 : 1000, m = 44, px = (W - 2 * m) / (o.max * 10), X = mm => m + mm * px;
+  let s = `<svg viewBox="0 0 ${W} 196" class="nl" role="img" aria-label="Objeto sobre una regla">`;
+  s += `<rect x="${X(o.from)}" y="16" width="${(o.to - o.from) * px}" height="44" rx="14" fill="${o.color}"/><text x="${X((o.from + o.to) / 2)}" y="51" text-anchor="middle" font-size="34">${o.emoji}</text>`;
+  s += `<path d="M${X(o.from)} 10V92M${X(o.to)} 10V92" stroke="currentColor" stroke-width="2.5" stroke-dasharray="7 6" fill="none"/>`;
+  s += `<rect x="${m - 24}" y="92" width="${W - 2 * m + 48}" height="92" rx="8" fill="#ffe28a" stroke="#b98a00" stroke-width="3"/>`;
+  for (let i = 0; i <= o.max * 10; i++) {
+    const h = i % 10 === 0 ? 36 : i % 5 === 0 ? 25 : 14;
+    s += `<line x1="${X(i)}" y1="92" x2="${X(i)}" y2="${92 + h}" stroke="#3b2a05" stroke-width="${i % 10 === 0 ? 3.5 : 2}"/>`;
+    if (i % 10 === 0) s += `<text x="${X(i)}" y="170" text-anchor="middle" font-size="${o.max > 9 ? 30 : 36}" font-weight="700" fill="#3b2a05">${i / 10}</text>`;
+  }
+  return s + `</svg>`;
+}
+const seqHTML = (arr, holes) => `<div class="seq">${arr.map((v, i) => holes.includes(i) ? '<span class="q">?</span>' : `<span>${v}</span>`).join('')}</div>`;
+
+/* ---------- Generadores de retos ---------- */
+function mkChoice(w, tag, prompt, correct, wrongs, extra) {
+  const opts = shuffle(uniq([correct, ...wrongs.filter(x => x !== correct)]));
+  return { w, tag, kind: 'choice', prompt, opts, ans: opts.indexOf(correct), explain: `La respuesta correcta es <b>${correct}</b>.`, hint: 'Lee otra vez con calma y descarta las que no pueden ser.', ...(extra || {}) };
+}
+const teoria = (w, tag, pool) => () => { const [p, c, ws, ex] = pick(pool); return mkChoice(w, tag, p, c, ws, ex ? { explain: ex } : null); };
+
+// Isla 1: recta numérica
+const T1 = 'Recta numérica · Zahlenstrahl';
+function gLeer(kind) {
+  kind = kind || pick(['u', 'u', 'd']);
+  let start, step, count, t;
+  if (kind === 'u') { count = narrow() ? 40 : 60; start = rnd(1, (990 - count) / 10) * 10; step = 1; do { t = rnd(1, count - 1); } while (t % 10 === 0 && Math.random() < .85); }
+  else { count = narrow() ? 40 : 50; start = rnd(0, (1000 - count * 10) / 100) * 100; step = 10; do { t = rnd(1, count - 1); } while (t % 10 === 0); }
+  const q = { w: 'recta', tag: T1, kind: 'num', start, step, count, labelEvery: 10, target: start + t * step, canHint: true };
+  q.prompt = 'Mira dónde empieza, dónde termina y cuánto vale cada rayita. ¿Qué número señala la flecha?';
+  q.slots = [{ ans: q.target }];
+  q.visual = (q, u) => lineSVG({ ...q, marks: [{ pos: t, color: u.done ? 'var(--ok)' : 'var(--red)', text: u.done ? q.target : undefined }], hops: u.hint && !u.done ? { from: nearestLabel(q), to: t } : null });
+  q.hint = `Cada rayita vale ${step}. Cuenta los saltos desde el número más cercano.`;
+  const li = nearestLabel(q), lv = start + li * step, k = Math.abs(t - li);
+  q.explain = `La flecha señala el <b>${q.target}</b>. Cada rayita vale ${step}: desde el ${lv} hay ${k} rayitas, ${lv} ${t >= li ? '+' : '−'} ${k * step} = ${q.target}.`;
+  return q;
+}
+function gUbicar() {
+  const count = narrow() ? 20 : 40, start = rnd(1, (990 - count) / 10) * 10;
+  let t; do { t = rnd(1, count - 1); } while (t % 10 === 0);
+  const target = start + t, dec = Math.floor(target / 10) * 10;
+  return { w: 'recta', tag: T1, kind: 'tap', start, step: 1, count, labelEvery: 10, target, canHint: true,
+    prompt: `Toca la rayita donde va el <strong>${target}</strong>.`,
+    hint: `Busca primero el ${dec} y luego cuenta ${target - dec} rayitas hacia la derecha.`,
+    explain: `El ${target} está ${target - dec} rayitas después del ${dec}.` };
+}
+function gFalta() {
+  const s = pick([2, 5, 10, 10, 50, 100]), a = rnd(1, Math.floor((1000 - 5 * s) / s)) * s, h = rnd(1, 4);
+  const arr = rep(6, (_, i) => a + i * s);
+  return { w: 'recta', tag: T1, kind: 'num', prompt: 'En la recta todos los saltos son iguales. ¿Qué número falta?', visual: () => seqHTML(arr, [h]), slots: [{ ans: arr[h] }],
+    hint: `Mira cuánto hay de un número al siguiente: ${arr[h === 1 ? 2 : 0]} → ${arr[h === 1 ? 3 : 1]}.`,
+    explain: `Cada salto vale ${s}. ${arr[h - 1]} + ${s} = <b>${arr[h]}</b>.` };
+}
+const gRectaT = teoria('recta', T1, [
+  ['¿Cuál es verdad sobre la recta numérica?', 'No tiene límite, es infinita', ['Termina en el 100', 'Los números van desordenados', 'Los saltos son de tamaños distintos']],
+  ['¿Cómo se ubican los números en la recta numérica?', 'En orden ascendente', ['En orden descendente', 'Sin ningún orden', 'Solo los pares']],
+  ['¿Hacia dónde crecen los números en la recta?', 'Hacia la derecha ➡️', ['Hacia la izquierda ⬅️', 'Hacia arriba ⬆️', 'No crecen']],
+  ['La recta numérica está separada en…', 'partes iguales', ['partes de cualquier tamaño', 'dos partes', 'colores']],
+  ['¿Para qué podemos usar la recta numérica?', 'Para sumar y restar', ['Para medir el tiempo', 'Para pintar', 'Para pesar cosas']],
+  ['¿Cómo se dice "recta numérica" en alemán?', 'der Zahlenstrahl', ['die Nachbarzahl', 'das Geld', 'der Zentimeter']]
+]);
+
+// Isla 2: comparar
+const T2 = 'Comparar · vergleichen';
+const sg = a => a === '<' ? '&lt;' : a === '>' ? '&gt;' : '=';
+function digitsExplain(a, b, ans) {
+  const sa = String(a), sb = String(b), L = Math.max(sa.length, sb.length);
+  let diff = -1; if (sa.length === sb.length) for (let i = 0; i < L; i++) if (sa[i] !== sb[i]) { diff = i; break; }
+  const row = s => { let r = ''; const pad = L - s.length; for (let i = 0; i < L; i++) { const c = i < pad ? '' : s[i - pad]; r += `<span class="dg${i === diff ? ' hl' : ''}${c === '' ? ' empty' : ''}">${c}</span>`; } return `<div class="dgrow">${r}<span class="dgn">${cifras(s.length)}</span></div>`; };
+  let t;
+  if (sa.length !== sb.length) t = `${fmt(a)} tiene ${cifras(sa.length)} y ${fmt(b)} tiene ${cifras(sb.length)}. Es mayor el que tiene más cifras: ${fmt(a)} ${sg(ans)} ${fmt(b)}.`;
+  else if (diff < 0) t = `Son exactamente iguales: ${fmt(a)} = ${fmt(b)}.`;
+  else t = `Tienen las mismas cifras. De izquierda a derecha, la primera cifra distinta es ${sa[diff]} contra ${sb[diff]}, así que ${fmt(a)} ${sg(ans)} ${fmt(b)}.`;
+  return t + `<br><div class="dgbox">${row(sa)}${row(sb)}</div>`;
+}
+const cifras = n => n === 1 ? '1 cifra' : n + ' cifras';
+const cmpAns = (a, b) => a > b ? '>' : a < b ? '<' : '=';
+function gComp() {
+  const num = L => { let s = String(rnd(1, 9)); for (let i = 1; i < L; i++) s += rnd(0, 9); return s; };
+  const r = Math.random(); let a, b;
+  if (r < .28) { if (Math.random() < .2) { a = num(3); b = '1000'; } else { const L1 = rnd(1, 2); a = num(L1); b = num(L1 + 1); if (Math.random() < .6) { a = '9' + a.slice(1); b = '1' + b.slice(1); } } if (Math.random() < .5) [a, b] = [b, a]; }
+  else if (r < .88) { const L = Math.random() < .85 ? 3 : 2, p = pick([0, 1, L - 1, L - 1]); a = num(L); let e; do { e = rnd(p === 0 ? 1 : 0, 9); } while (e === +a[p]); b = a.slice(0, p) + e; for (let i = p + 1; i < L; i++) b += rnd(0, 9); }
+  else { a = num(3); b = a; }
+  const A = +a, B = +b, ans = cmpAns(A, B);
+  return { w: 'comparar', tag: T2, kind: 'comp', prompt: '¿Qué signo va en medio?', L: fmt(A), R: fmt(B), ans,
+    hint: a.length !== b.length ? 'Cuenta primero cuántas cifras tiene cada número.' : 'Compara cifra por cifra, empezando por la izquierda.', explain: digitsExplain(A, B, ans) };
+}
+function expr(n, style) {
+  const h = Math.floor(n / 100), t = Math.floor(n % 100 / 10), o = n % 10;
+  if (style === 'sum') return [h && h * 100, t && t * 10, o].filter(Boolean).join(' + ');
+  if (style === 'hze') return [h && h + 'H', t && t + 'Z', o && o + 'E'].filter(Boolean).join(' + ');
+  return String(n);
+}
+function gCompExpr() {
+  const A = rnd(101, 989), r = Math.random(); let b;
+  b = r < .2 ? A : r < .6 ? A + pick([-30, -20, -10, 10, 20, 30]) : A + pick([-5, -2, -1, 1, 2, 5]);
+  if (b < 100 || b > 999) b = A;
+  const st = pick([['sum', 'sum'], ['hze', 'hze'], ['sum', 'plain'], ['plain', 'hze'], ['sum', 'hze']]);
+  const ans = cmpAns(A, b);
+  return { w: 'comparar', tag: T2, kind: 'comp', prompt: 'Calcula cada lado y elige el signo. <small>H = centenas, Z = decenas, E = unidades</small>', L: expr(A, st[0]), R: expr(b, st[1]), ans,
+    hint: 'Primero averigua qué número es cada lado. H vale 100, Z vale 10 y E vale 1.',
+    explain: `${expr(A, st[0])} = <b>${A}</b> y ${expr(b, st[1])} = <b>${b}</b>. Entonces ${A} ${sg(ans)} ${b}.` };
+}
+function gBlocks() {
+  const a = rnd(1, 5) * 100 + rnd(0, 9) * 10 + rnd(0, 9); let b = Math.random() < .15 ? a : a + pick([-100, -20, -10, -3, 3, 10, 20, 100]);
+  if (b < 100 || b > 699) b = a;
+  const ans = cmpAns(a, b);
+  return { w: 'comparar', tag: T2, kind: 'comp', prompt: 'Cuenta los bloques: 🟩 = 100, barra roja = 10, cuadrito azul = 1. ¿Qué signo va?', L: blocksSVG(a), R: blocksSVG(b), ans,
+    hint: 'Cuenta primero las placas verdes de 100. Si hay las mismas, mira las barras de 10.', explain: `A la izquierda hay <b>${a}</b> y a la derecha <b>${b}</b>: ${a} ${sg(ans)} ${b}.` };
+}
+function gOrd() {
+  const h = rnd(1, 8), set = new Set();
+  while (set.size < 4) set.add(Math.random() < .65 ? h * 100 + rnd(0, 99) : rnd(100, 999));
+  const asc = Math.random() < .5, items = shuffle([...set]).map(v => ({ v, label: String(v) }));
+  return { w: 'comparar', tag: T2, kind: 'ord', prompt: `Ordena de <strong>${asc ? 'menor a mayor' : 'mayor a menor'}</strong>. Toca los números en orden.`, items, asc,
+    hint: 'Compara primero las centenas, luego las decenas y al final las unidades.' };
+}
+
+// Isla 3: vecinos
+const T3 = 'Números vecinos · Nachbarn';
+function gVec(kind) {
+  let n = rnd(101, 989), lo, hi;
+  const K = { zahl: ['Nachbarzahlen', 'los vecinos de uno en uno'], zehner: ['Nachbarzehner', 'las decenas vecinas'], hunderter: ['Nachbarhunderter', 'las centenas vecinas'] }[kind];
+  let ex, line;
+  if (kind === 'zahl') { lo = n - 1; hi = n + 1; ex = `Los vecinos de ${n} son ${lo} y ${hi}.`; line = { start: n - 2, step: 1, count: 4, labelAll: true }; }
+  else if (kind === 'zehner') {
+    if (Math.random() < .12) n = rnd(11, 98) * 10;
+    lo = n % 10 ? Math.floor(n / 10) * 10 : n - 10; hi = Math.floor(n / 10) * 10 + 10;
+    ex = n % 10 === 0 ? `${n} ya es una decena, así que sus decenas vecinas son ${lo} y ${hi}.` : `${n} está entre las decenas ${lo} y ${hi}.`;
+    line = { start: lo, step: 1, count: hi - lo, labelEvery: 10 };
+  } else {
+    lo = n % 100 ? Math.floor(n / 100) * 100 : n - 100; hi = Math.floor(n / 100) * 100 + 100;
+    ex = `${n} está entre las centenas ${lo} y ${hi}.`; line = { start: lo, step: 10, count: (hi - lo) / 10, labelEvery: 10 };
+  }
+  line.marks = [{ pos: (n - line.start) / line.step, color: 'var(--teal)', text: n }];
+  return { w: 'vecinos', tag: `${K[0]} · ${K[1]}`, kind: 'num', prompt: `Escribe ${K[1]} de <strong>${n}</strong>.`,
+    slots: [{ ans: lo, cap: 'Vorgänger · antes' }, { pre: `<b class="zahl">${n}</b>`, ans: hi, cap: 'Nachfolger · después' }],
+    hint: (q, u) => {
+      const a = +u.inputs[0], b = +u.inputs[1];
+      if (kind === 'zahl') return 'Los vecinos son uno menos y uno más.';
+      if (kind === 'zehner') return a % 100 === 0 && b % 100 === 0 ? 'Escribiste centenas (terminan en 00). Aquí piden decenas: terminan en 0 y están muy cerca del número.' : `Las decenas terminan en 0. ¿Cuál está justo antes de ${n} y cuál justo después?`;
+      return a % 100 || b % 100 ? 'Ojo: aquí piden centenas, y las centenas terminan en 00.' : `¿Qué centena está justo antes de ${n} y cuál justo después?`;
+    },
+    explain: ex + `<div class="miniline">${lineSVG(line)}</div>` };
+}
+function gPasos() {
+  const up = Math.random() < .5, s = 100;
+  const a = up ? pick([rnd(1, 9) * 10 + 0, rnd(11, 99), rnd(101, 199)]) : (s === 100 ? rnd(801, 999) : rnd(150, 990));
+  const arr = rep(5, (_, i) => a + (up ? 1 : -1) * i * s);
+  return { w: 'vecinos', tag: 'Contar en saltos · Zähle in Schritten', kind: 'num', prompt: `Siempre <strong>${up ? '+' : '−'} ${s}</strong>. ¿Qué dos números siguen?`, visual: () => seqHTML(arr, [3, 4]),
+    slots: [{ ans: arr[3] }, { ans: arr[4] }], hint: `Solo cambia la cifra de las ${s === 100 ? 'centenas' : 'decenas'}; las demás se quedan igual.`,
+    explain: `${arr[2]} ${up ? '+' : '−'} ${s} = <b>${arr[3]}</b> y ${arr[3]} ${up ? '+' : '−'} ${s} = <b>${arr[4]}</b>.` };
+}
+function gVolver() {
+  const toH = Math.random() < .4, back = Math.random() < .5;
+  let n, t, ans;
+  if (toH) { n = rnd(1, 9) * 100 + pick([5, 30, 45, 55, 80, 95]); t = back ? Math.floor(n / 100) * 100 : Math.floor(n / 100) * 100 + 100; }
+  else { do { n = rnd(101, 989); } while (n % 10 === 0); t = back ? Math.floor(n / 10) * 10 : Math.floor(n / 10) * 10 + 10; }
+  ans = Math.abs(n - t);
+  return { w: 'vecinos', tag: toH ? 'Hasta la centena · zum Nachbarhunderter' : 'Hasta la decena · zum Nachbarzehner', kind: 'num',
+    prompt: `${back ? 'Retrocede' : 'Avanza'} hasta la ${toH ? 'centena' : 'decena'} vecina. ¿Cuánto falta?`,
+    slots: [{ pre: `${n} ${back ? '−' : '+'}`, ans, unit: `= ${t}` }],
+    hint: `¿Cuántos pasos hay de ${n} a ${t}?`, explain: `${n} ${back ? '−' : '+'} <b>${ans}</b> = ${t}.` };
+}
+function gAcertijo() {
+  if (Math.random() < .5) { const lo = rnd(11, 98) * 10, c = lo + rnd(1, 9); return mkChoice('vecinos', 'Acertijo · Welche Zahl ist es?', `Mis <span class="de">Nachbarzehner</span> son <strong>${lo}</strong> y <strong>${lo + 10}</strong>. ¿Qué número puedo ser?`, String(c), [String(lo - rnd(1, 9)), String(lo + 10 + rnd(1, 9)), String(lo - 10 - rnd(1, 9))], { hint: 'El número tiene que estar entre las dos decenas.', explain: `<b>${c}</b> está entre ${lo} y ${lo + 10}.` }); }
+  const lo = rnd(1, 8) * 100, c = lo + rnd(1, 99);
+  return mkChoice('vecinos', 'Acertijo · Welche Zahl ist es?', `Mis <span class="de">Nachbarhunderter</span> son <strong>${lo}</strong> y <strong>${lo + 100}</strong>. ¿Qué número puedo ser?`, String(c), [String(lo - rnd(1, 90)), String(lo + 100 + rnd(1, 90)), String(lo === 100 ? 100 : lo - 100 - rnd(1, 9) + 100 * (lo < 300 ? 3 : 0))], { hint: 'El número tiene que estar entre las dos centenas.', explain: `<b>${c}</b> está entre ${lo} y ${lo + 100}.` });
+}
+const gVecT = teoria('vecinos', T3, [
+  ['<span class="de">Nachbarzahlen</span> son…', 'las unidades cercanas a un número', ['las decenas netas cercanas', 'las centenas netas cercanas', 'los números pares']],
+  ['<span class="de">Nachbarzehner</span> son…', 'las decenas netas cercanas a un número', ['las unidades cercanas', 'las centenas netas cercanas', 'los números de dos cifras']],
+  ['<span class="de">Nachbarhunderter</span> son…', 'las centenas netas cercanas a un número', ['las unidades cercanas', 'las decenas netas cercanas', 'los números mayores que 100']],
+  ['<span class="de">Vorgänger</span> significa…', 'el número de antes', ['el número de después', 'el número más grande', 'el doble']],
+  ['<span class="de">Nachfolger</span> significa…', 'el número de después', ['el número de antes', 'la mitad', 'el número más pequeño']]
+]);
+
+// Isla 4: euros y céntimos
+const T4 = 'Euros y céntimos · Euro und Cent';
+function gContar() {
+  const m = moneySet(), E = Math.floor(m.total / 100), C = m.total % 100;
+  const es = m.items.filter(v => v >= 100).map(v => v / 100), cs = m.items.filter(v => v < 100);
+  return { w: 'euros', tag: '¿Cuánto dinero hay? · Wie viel Euro?', kind: 'num', prompt: 'Cuenta los billetes y las monedas.', visual: () => moneyHTML(m.items),
+    slots: [{ ans: E, unit: '€' }, { pre: 'y', ans: C, unit: 'ct' }],
+    hint: 'Suma primero los billetes y las monedas de euro. Después suma aparte los céntimos.',
+    explain: `Euros: ${es.join(' + ')} = <b>${E} €</b>. Céntimos: ${cs.length ? cs.join(' + ') + ' = ' : ''}<b>${C} ct</b>. Con coma se escribe <b>${eur(m.total)}</b>.` };
+}
+function gComa() {
+  const e = rnd(1, 40), c = Math.random() < .5 ? rnd(1, 9) : rnd(10, 99), ok = eur(e * 100 + c);
+  const wr = c < 10 ? [`${e},${c}0 €`, `${e},${c} €`, `${e}${c},00 €`] : [`${c},${String(e).padStart(2, '0')} €`, `${e}${c} €`, `${e},0${String(c)[0]} €`];
+  return mkChoice('euros', 'Escribir con coma · mit Komma', `¿Cómo se escribe <strong>${e} € y ${c} ct</strong> con coma?`, ok, wr,
+    { hint: 'Antes de la coma van los euros. Después de la coma van SIEMPRE dos cifras para los céntimos.', explain: `${e} euros antes de la coma y ${c} céntimos después, con dos cifras: <b>${ok}</b>.` });
+}
+const DE1 = ['null', 'ein', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'elf', 'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn', 'sechzehn', 'siebzehn', 'achtzehn', 'neunzehn'];
+const DE10 = ['', '', 'zwanzig', 'dreißig', 'vierzig', 'fünfzig', 'sechzig', 'siebzig', 'achtzig', 'neunzig'];
+const deNum = n => n < 20 ? DE1[n] : (n % 10 ? DE1[n % 10] + 'und' : '') + DE10[Math.floor(n / 10)];
+const cap = s => s[0].toUpperCase() + s.slice(1);
+function gPalabra() {
+  const e = rnd(2, 19), c = Math.random() < .35 ? rnd(2, 9) : rnd(10, 99);
+  const txt = c < 10 ? `${cap(deNum(e))} Euro und ${deNum(c)} Cent` : `${cap(deNum(e))} Euro ${deNum(c)}`;
+  const ok = eur(e * 100 + c), sw = +String(c).padStart(2, '0').split('').reverse().join('');
+  const wr = uniq([c < 10 ? e * 100 + c * 10 : e * 100 + sw, c * 100 + e, c < 10 ? e * 1000 + c : e * 100 + (c + 10) % 100, (e + 1) * 100 + c, e * 100 + (c + 20) % 100]).filter(x => x !== e * 100 + c).slice(0, 3).map(eur);
+  return mkChoice('euros', 'En alemán · Schreibe mit Komma', `¿Qué cantidad es <strong style="white-space:normal">„${txt}“</strong>?`, ok, wr,
+    { hint: 'En alemán las unidades se dicen primero: „siebenunddreißig“ es 7 y 30, o sea 37.', explain: `„${txt}“ = <b>${ok}</b>.` });
+}
+function gBolsa() {
+  const T = pick([7, 12, 15, 25, 25, 30, 35]), deltas = shuffle([-5, 5, 10, -2, 2]).slice(0, 2);
+  const bags = [T, T + deltas[0], T + deltas[1]].map(v => moneyHTML(comboFor(v)));
+  return mkChoice('euros', 'Siempre ' + T + ' euros · Immer ' + T + ' Euro', `¿En cuál bolsa hay exactamente <strong>${T} €</strong>?`, bags[0], bags.slice(1), { hint: 'Suma con calma cada bolsa, empezando por el billete más grande.', explain: `Esta bolsa suma ${T} €: ${bags[0]}` });
+}
+const gEuroT = teoria('euros', T4, [
+  ['¿Cuántos céntimos tiene 1 euro?', '100 céntimos', ['10 céntimos', '50 céntimos', '1 000 céntimos']],
+  ['¿Cuál de estos billetes NO existe?', '30 €', ['5 €', '20 €', '50 €'], 'Los billetes de euro son de 5, 10, 20, 50, 100 y 200 €.'],
+  ['¿Cuál de estas monedas NO existe?', '3 ct', ['2 ct', '5 ct', '20 ct'], 'Las monedas son de 1, 2, 5, 10, 20 y 50 ct, y de 1 y 2 €.'],
+  ['¿Qué moneda vale más?', '2 €', ['50 ct', '20 ct', '1 €']],
+  ['¿Qué vale más?', '1 €', ['50 ct', '20 ct', '5 ct'], '1 € son 100 céntimos, más que cualquier moneda de céntimos.'],
+  ['El euro es la moneda de…', 'la Unión Europea 🇪🇺', ['Colombia', 'todo el mundo', 'Estados Unidos']],
+  ['¿Cómo se dice "dinero" en alemán?', 'das Geld', ['der Zahlenstrahl', 'das Lineal', 'die Zahl']]
+]);
+
+// Isla 5: equivalencias
+const T5 = 'Equivalencias · Euro ↔ Cent';
+function gE2C() {
+  const c = pick([rnd(1, 9) * 100, rnd(1, 9) * 100 + 50, rnd(1, 9) * 100 + pick([25, 75]), rnd(1, 9), 100 + rnd(1, 9), rnd(1, 9) * 10, rnd(1, 9) * 100 + rnd(11, 99)]);
+  const E = Math.floor(c / 100);
+  return { w: 'cambio', tag: T5, kind: 'num', prompt: 'Pasa de euros a céntimos.', slots: [{ pre: `${c % 100 === 0 ? E + ' €' : eur(c)} =`, ans: c, unit: 'cts' }],
+    hint: '1 € = 100 céntimos. Los euros se convierten en centenas y luego sumas los céntimos.', explain: `${E} € son ${E * 100} cts${c % 100 ? `, más ${c % 100} cts` : ''}: <b>${c} cts</b>.` };
+}
+function gC2E() {
+  const c = pick([30, 32, 450, 67, 50, 200, rnd(1, 9), rnd(10, 99), rnd(101, 999), rnd(1, 9) * 100]);
+  return { w: 'cambio', tag: T5, kind: 'num', comma: true, prompt: 'Pasa de céntimos a euros. Usa la coma.', slots: [{ pre: `${c} cts =`, ans: c / 100, unit: '€' }],
+    hint: 'Cada 100 céntimos forman 1 euro. Lo que sobra va después de la coma, con dos cifras.', explain: `${c} cts = ${Math.floor(c / 100)} € y ${c % 100} ct = <b>${eur(c)}</b>.` };
+}
+function gCompMoney() {
+  const a = rnd(1, 9) * 100 + pick([5, 20, 50, 80]); const b = pick([a, a + 45, a - 45, Math.floor(a / 100) * 10 + a % 100 / 5, a + 100]);
+  const ans = cmpAns(a, b), flip = Math.random() < .5;
+  return { w: 'cambio', tag: T5, kind: 'comp', prompt: 'Ojo con las unidades. ¿Qué signo va?', L: flip ? `${b} ct` : eur(a), R: flip ? eur(a) : `${b} ct`, ans: flip ? cmpAns(b, a) : ans,
+    hint: 'Pasa los dos a céntimos y entonces compara.', explain: `${eur(a)} son ${a} ct. Comparado con ${b} ct: ${flip ? `${b} ${sg(cmpAns(b, a))} ${a}` : `${a} ${sg(ans)} ${b}`}.` };
+}
+
+// Isla 6: la tienda
+const T6 = 'Problemas · Sachaufgaben';
+const SHOP = [['🥽', 'Schwimmbrille', 'gafas', 10], ['🪱', 'Schwimmnudel', 'churro', 4], ['🏐', 'Wasserball', 'pelota', 3], ['🤿', 'Schnorchel', 'snorkel', 5]];
+const boardPool = () => `<div class="board"><h4>🏊 Piscina · Schwimmbad</h4><div><span>Adultos <i>Erwachsene</i></span><b>12,00 €</b></div><div><span>Niños <i>Kinder</i></span><b>6,00 €</b></div></div>`;
+const boardShop = its => `<div class="board"><h4>🛍️ Tienda de la piscina</h4>${its.map(i => `<div><span>${i[0]} ${cap(i[2])} <i>${i[1]}</i></span><b>${i[3]} €</b></div>`).join('')}</div>`;
+function gEntrada() {
+  const [a, k] = pick([[0, 2], [0, 3], [1, 1], [1, 2], [2, 1], [2, 0]]), tot = a * 12 + k * 6;
+  return { w: 'tienda', tag: 'La entrada · Wie viel kostet der Eintritt?', kind: 'num', prompt: `Entran <strong>${[a && a + (a > 1 ? ' adultos' : ' adulto'), k && k + (k > 1 ? ' niños' : ' niño')].filter(Boolean).join(' y ')}</strong>. ¿Cuánto pagan en total?`, visual: boardPool,
+    slots: [{ ans: tot, unit: '€' }], hint: 'Suma una entrada por cada persona.', explain: `${[...rep(a, () => '12 €'), ...rep(k, () => '6 €')].join(' + ')} = <b>${tot} €</b>.` };
+}
+function gVueltas() {
+  const its = shuffle([...SHOP]).slice(0, rnd(1, 2)), tot = its.reduce((s, i) => s + i[3], 0), pay = [5, 10, 20, 50].find(b => b > tot);
+  return { w: 'tienda', tag: 'El cambio · Wie viel Rückgeld?', kind: 'num', prompt: `Compras ${its.map(i => i[0] + ' ' + i[2]).join(' y ')} y pagas con este billete. ¿Cuánto te devuelven?`,
+    visual: () => boardShop(its) + moneyHTML([pay * 100]), slots: [{ ans: pay - tot, unit: '€' }],
+    hint: 'Primero calcula cuánto cuesta todo. Después resta: lo que pagaste menos lo que cuesta.', explain: `${its.length > 1 ? its.map(i => i[3]).join(' + ') + ' = ' + tot + ' €. ' : ''}${pay} − ${tot} = <b>${pay - tot} €</b> de cambio.` };
+}
+function gDoble() {
+  if (Math.random() < .5) { const n = pick([rnd(11, 49) * 10, rnd(101, 449), rnd(12, 49)]); return { w: 'tienda', tag: 'El doble · Verdoppeln', kind: 'num', prompt: `Ana tiene <strong>${n} €</strong>. Su hermano tiene el <b>doble</b>. ¿Cuánto tiene él?`, slots: [{ ans: n * 2, unit: '€' }], hint: `El doble es sumar el número con él mismo: ${n} + ${n}.`, explain: `${n} + ${n} = <b>${n * 2} €</b>.` }; }
+  const n = 2 * pick([rnd(11, 49) * 10, rnd(101, 449), rnd(12, 49)]);
+  return { w: 'tienda', tag: 'La mitad · Halbieren', kind: 'num', prompt: `Leo tiene <strong>${n} €</strong>. Gasta la <b>mitad</b>. ¿Cuánto gasta?`, slots: [{ ans: n / 2, unit: '€' }], hint: 'La mitad es repartir en dos partes iguales. Parte por separado las centenas, las decenas y las unidades.', explain: `${n / 2} + ${n / 2} = ${n}, así que la mitad es <b>${n / 2} €</b>.` };
+}
+function gSumaComa() {
+  const A = rnd(1, 9) * 100 + pick([10, 20, 30, 40, 50]), B = rnd(1, 9) * 100 + pick([0, 10, 20, 30, 40]);
+  return { w: 'tienda', tag: 'Sumar precios · Mit Geld rechnen', kind: 'num', comma: true, prompt: '¿Cuánto cuestan las dos cosas juntas?', slots: [{ pre: `${eur(A)} + ${eur(B)} =`, ans: (A + B) / 100, unit: '€' }],
+    hint: 'Suma primero los euros y después los céntimos.', explain: `Euros: ${Math.floor(A / 100)} + ${Math.floor(B / 100)} = ${Math.floor(A / 100) + Math.floor(B / 100)}. Céntimos: ${A % 100} + ${B % 100} = ${A % 100 + B % 100}. Total: <b>${eur(A + B)}</b>.` };
+}
+const gDialogo = teoria('tienda', 'En la tienda · Einkaufen', [
+  ['„Was kostet es?“ significa…', '¿Cuánto cuesta?', ['¿Qué quieres comprar?', '¡Buenos días!', 'Aquí tienes']],
+  ['„Was möchtest du kaufen?“ significa…', '¿Qué quieres comprar?', ['¿Cuánto cuesta?', '¿Cómo te llamas?', 'Todo claro']],
+  ['„Guten Tag!“ significa…', '¡Buenos días!', ['¡Adiós!', '¡Gracias!', '¿Cuánto cuesta?']],
+  ['„das Rückgeld“ es…', 'el cambio que te devuelven', ['el precio', 'la entrada', 'el doble']],
+  ['„doppelt so viel“ significa…', 'el doble', ['la mitad', 'el cambio', 'el precio']],
+  ['„halb so viel“ significa…', 'la mitad', ['el doble', 'la entrada', 'el billete']],
+  ['„Kinder“ y „Erwachsene“ son…', 'niños y adultos', ['euros y céntimos', 'billetes y monedas', 'metros y centímetros']]
+]);
+
+// Isla 7: medidas
+const T7 = 'Longitud · Längen';
+const THINGS = [['✏️', 'el lápiz', '#f0a202'], ['🖍️', 'el crayón', '#d24a42'], ['🔋', 'la pila', '#5d6b7a'], ['🔑', 'la llave', '#c9a227'], ['🥄', 'la cuchara', '#8fa3b5'], ['🪥', 'el cepillo', '#3fb8a9'], ['📎', 'el clip', '#7a4fd0'], ['🍬', 'el dulce', '#ef7fb0']];
+function gReglaCm() {
+  const max = narrow() ? 8 : 13, off = Math.random() < .35, from = off ? rnd(1, 3) : 0, len = rnd(2, max - 1 - from), th = pick(THINGS);
+  return { w: 'medidas', tag: 'Medir en centímetros · Zentimeter', kind: 'num', prompt: `¿Cuántos <strong>centímetros</strong> mide ${th[1]}?`, visual: () => rulerSVG({ max, from: from * 10, to: (from + len) * 10, emoji: th[0], color: th[2] }),
+    slots: [{ ans: len, unit: 'cm' }], hint: off ? '¡Ojo! No empieza en el 0. Cuenta los centímetros entre el inicio y el final.' : 'Mira en qué número termina el objeto.',
+    explain: off ? `Empieza en el ${from} y termina en el ${from + len}: ${from + len} − ${from} = <b>${len} cm</b>.` : `Empieza en el 0 y termina en el ${len}: mide <b>${len} cm</b>.` };
+}
+function gReglaMm() {
+  const max = narrow() ? 7 : 12; let len; do { len = rnd(12, max * 10 - 6); } while (len % 10 === 0);
+  const th = pick(THINGS), c = Math.floor(len / 10), m = len % 10;
+  return { w: 'medidas', tag: 'Medir en milímetros · Millimeter', kind: 'num', prompt: `¿Cuántos <strong>milímetros</strong> mide ${th[1]}?`, visual: () => rulerSVG({ max, from: 0, to: len, emoji: th[0], color: th[2] }),
+    slots: [{ ans: len, unit: 'mm' }], hint: 'Cada centímetro tiene 10 rayitas pequeñas (10 mm). Cuenta los cm completos y luego las rayitas que sobran.',
+    explain: `Llega a ${c} cm y ${m} rayitas más: ${c} × 10 = ${c * 10}, más ${m} = <b>${len} mm</b>.` };
+}
+function gConv() {
+  const t = pick(['cm-mm', 'cm-mm', 'cm-mm', 'mm-cm', 'mm-cm', 'mm-cm', 'mix', 'mix', 'mix', 'm-cm', 'm-cm', 'm-mm']);
+  if (t === 'cm-mm') { const c = rnd(1, 12); return { w: 'medidas', tag: T7, kind: 'num', prompt: 'Completa.', slots: [{ pre: `${c} cm =`, ans: c * 10, unit: 'mm' }], hint: '1 cm = 10 mm.', explain: `${c} × 10 = <b>${c * 10} mm</b>.` }; }
+  if (t === 'mm-cm') { const c = rnd(1, 12); return { w: 'medidas', tag: T7, kind: 'num', prompt: 'Completa.', slots: [{ pre: `${c * 10} mm =`, ans: c, unit: 'cm' }], hint: 'Cada 10 mm forman 1 cm.', explain: `${c * 10} mm = <b>${c} cm</b>.` }; }
+  if (t === 'mix') { const c = rnd(1, 9), m = rnd(1, 9); return { w: 'medidas', tag: 'Expresa en milímetros', kind: 'num', prompt: 'Expresa en milímetros.', slots: [{ pre: `${c} cm y ${m} mm =`, ans: c * 10 + m, unit: 'mm' }], hint: `Primero pasa los ${c} cm a milímetros y luego suma los ${m} mm.`, explain: `${c} cm = ${c * 10} mm. ${c * 10} + ${m} = <b>${c * 10 + m} mm</b>.` }; }
+  if (t === 'm-cm') { const c = rnd(1, 9); return { w: 'medidas', tag: T7, kind: 'num', prompt: 'Completa.', slots: [{ pre: `${c} m =`, ans: c * 100, unit: 'cm' }], hint: '1 m = 100 cm.', explain: `${c} × 100 = <b>${c * 100} cm</b>.` }; }
+  const c = 1; return { w: 'medidas', tag: T7, kind: 'num', prompt: 'Completa.', slots: [{ pre: `${c} m =`, ans: c * 1000, unit: 'mm' }], hint: '1 m = 1 000 mm.', explain: `${c} × 1 000 = <b>${c * 1000} mm</b>.` };
+}
+function gMyCm() {
+  const n = rnd(1, 2) * 100 + rnd(1, 99);
+  return { w: 'medidas', tag: 'Metros y centímetros', kind: 'num', prompt: 'Completa.', slots: [{ pre: `${n} cm =`, ans: Math.floor(n / 100), unit: 'm' }, { pre: 'y', ans: n % 100, unit: 'cm' }],
+    hint: 'Cada 100 cm forman 1 metro. ¿Cuántos centímetros sobran?', explain: `${n} cm = ${Math.floor(n / 100) * 100} cm + ${n % 100} cm = <b>${Math.floor(n / 100)} m y ${n % 100} cm</b>.` };
+}
+function gUnidad() {
+  const [e, txt, u, ex] = pick([['🐜', 'Una hormiga mide 5 …', 'mm'], ['🐛', 'Un pulgón mide 5 …', 'mm'], ['🐝', 'Un abejorro mide 2 …', 'cm'], ['🪰', 'Una mosca mide 1 …', 'cm'], ['🐸', 'Una rana mide 5 …', 'cm'], ['🐝', 'Una avispa mide 12 …', 'mm'], ['🐞', 'Una mariquita mide 8 …', 'mm'], ['✏️', 'Un lápiz mide 15 …', 'cm'], ['🪑', 'Una mesa mide 65 … de alto', 'cm'], ['🦋', 'Las alas de una mariposa miden 5 …', 'cm'], ['🚪', 'Una puerta mide 2 … de alto', 'm'], ['🚌', 'Un bus mide 12 … de largo', 'm'], ['🏊', 'Una piscina mide 25 … de largo', 'm'], ['🎻', 'Un violín mide 55 … de largo', 'cm']]);
+  return mkChoice('medidas', '¿mm, cm o m? · Setze ein', `${e} ${txt}`, u, ['mm', 'cm', 'm'], { hint: 'mm para cosas diminutas, cm para cosas que caben en la mano o en la mesa, m para cosas grandes.', explain: `${e} ${txt.replace('…', '<b>' + u + '</b>')}` });
+}
+function gOrdLong() {
+  const set = new Set(); while (set.size < 4) set.add(rnd(8, 125));
+  const lab = v => { const r = Math.random(); return r < .4 || v < 10 ? `${v} mm` : v % 10 === 0 ? `${v / 10} cm` : r < .8 ? `${Math.floor(v / 10)} cm ${v % 10} mm` : `${v} mm`; };
+  const items = shuffle([...set]).map(v => ({ v, label: lab(v) }));
+  return { w: 'medidas', tag: 'Ordenar longitudes · Ordne der Länge nach', kind: 'ord', asc: true, items, prompt: 'Ordena de la <strong>más corta</strong> a la más larga.', hint: 'Pasa todas las medidas a milímetros antes de comparar.',
+    explain: 'En milímetros: ' + [...items].sort((a, b) => a.v - b.v).map(i => `${i.label}${/cm/.test(i.label) ? ' (' + i.v + ' mm)' : ''}`).join(' &lt; ') + '.' };
+}
+const gMedT = teoria('medidas', T7, [
+  ['¿Cuántos centímetros tiene 1 metro?', '100 cm', ['10 cm', '1 000 cm', '50 cm']],
+  ['¿Cuántos milímetros tiene 1 centímetro?', '10 mm', ['100 mm', '1 000 mm', '5 mm']],
+  ['¿Cuántos milímetros tiene 1 metro?', '1 000 mm', ['100 mm', '10 mm', '500 mm']],
+  ['¿Cuántos decímetros tiene 1 metro?', '10 dm', ['100 dm', '1 000 dm', '1 dm']],
+  ['¿Cuál es la unidad principal para medir longitudes?', 'el metro', ['el milímetro', 'el euro', 'el céntimo']],
+  ['¿Cuál es la unidad más pequeña?', 'el milímetro', ['el centímetro', 'el decímetro', 'el metro']]
+]);
+
+/* ---------- Las islas ---------- */
+const yt = (id, t) => ({ u: 'https://www.youtube.com/watch?v=' + id, t, k: 'Video en YouTube', ic: '▶️' });
+const WORLDS = [
+  { id: 'recta', emoji: '🏝️', name: 'Isla de la Recta', de: 'Der Zahlenstrahl bis 1000', c: 'var(--teal)',
+    gens: [() => gLeer('u'), () => gLeer('u'), () => gLeer('d'), gUbicar, gUbicar, gFalta, gFalta, gRectaT],
+    links: [yt('M63-dzc0VxE', 'La recta numérica')],
+    learn: () => `<p>La <b>recta numérica</b> es una línea recta en la que colocamos los números en orden, uno detrás del otro. Normalmente empieza en el 0 y va creciendo hacia la derecha: 1, 2, 3, 4…</p>
+      ${lineSVG({ start: 160, step: 1, count: narrow() ? 30 : 60, labelEvery: 10, marks: [{ pos: 7, color: 'var(--red)', text: 167 }] })}
+      <h3>Características</h3><ul><li>Es una línea recta.</li><li>NO tiene límite, es infinita.</li><li>Está separada en partes iguales.</li><li>Los números se ubican en orden ascendente.</li><li>Cada salto representa una misma cantidad.</li><li>Se puede usar para sumar y restar.</li></ul>
+      <h3>El truco 🕵️</h3><p>Antes de responder mira tres cosas: en qué número <b>empieza</b>, en cuál <b>termina</b> y <b>cuánto vale cada rayita</b>.</p>
+      <div class="voc"><span><b>der Zahlenstrahl</b> la recta numérica</span><span><b>der Rechenstrich</b> la recta sin rayitas</span><span><b>die Zahl</b> el número</span></div>` },
+  { id: 'comparar', emoji: '🐊', name: 'Pantano del Cocodrilo', de: 'Zahlen vergleichen: < > =', c: '#c46a00',
+    gens: [gComp, gComp, gComp, gCompExpr, gCompExpr, gBlocks, gOrd, gOrd],
+    links: [yt('Csk0NKeHvME', 'Comparar números con la tabla de valor posicional')],
+    learn: () => `<p>Para comparar números naturales usamos tres signos:</p><div class="ex">&gt; mayor que &nbsp;·&nbsp; &lt; menor que &nbsp;·&nbsp; = igual que<small>🐊 La boca del cocodrilo siempre se abre hacia el número más grande.</small></div>
+      <h3>Regla 1</h3><p>Primero se compara la <b>cantidad de cifras</b>. Es mayor el que tiene más cifras.</p><div class="ex">423 &gt; 85<small>3 cifras contra 2 cifras</small></div>
+      <h3>Regla 2</h3><p>Si tienen igual cantidad de cifras, se compara de <b>izquierda a derecha</b> hasta encontrar la cifra distinta.</p><div class="ex">642 &lt; 648<small>6 = 6, 4 = 4, y al final 2 &lt; 8</small></div>
+      <div class="voc"><span><b>H</b> Hunderter · centenas</span><span><b>Z</b> Zehner · decenas</span><span><b>E</b> Einer · unidades</span><span><b>größer als</b> mayor que</span><span><b>kleiner als</b> menor que</span></div>` },
+  { id: 'vecinos', emoji: '🏘️', name: 'Villa de los Vecinos', de: 'Nachbarzahlen, -zehner, -hunderter', c: 'var(--purple)',
+    gens: [() => gVec('zahl'), () => gVec('zehner'), () => gVec('zehner'), () => gVec('hunderter'), () => gVec('hunderter'), gPasos, gVolver, gAcertijo, gVecT],
+    links: [yt('6jK59IahDWI', 'Nachbarzehner und Nachbarhunderter')],
+    learn: () => `<p>Todo número tiene vecinos. Mira los de <b>348</b>:</p>
+      <div class="ex">347 · <u>348</u> · 349<small><b class="de">Nachbarzahlen</b>: las unidades cercanas (uno menos y uno más)</small></div>
+      <div class="ex">340 · <u>348</u> · 350<small><b class="de">Nachbarzehner</b>: las decenas netas cercanas (terminan en 0)</small></div>
+      <div class="ex">300 · <u>348</u> · 400<small><b class="de">Nachbarhunderter</b>: las centenas netas cercanas (terminan en 00)</small></div>
+      <h3>¡Cuidado! ⚠️</h3><p>Lee bien cuál te piden. Si dice <b>Zehner</b>, la respuesta termina en un solo 0 y está muy cerquita del número.</p>
+      <h3>Contar en saltos</h3><p>Siempre +100: 50, 150, 250, 350… Solo cambia la cifra de las centenas.</p>
+      <div class="voc"><span><b>der Vorgänger</b> el de antes</span><span><b>der Nachfolger</b> el de después</span><span><b>Zähle in Schritten</b> cuenta en saltos</span></div>` },
+  { id: 'euros', emoji: '💶', name: 'Banco del Euro', de: 'Euro und Cent · Geldwerte', c: '#24904f',
+    gens: [gContar, gContar, gContar, gComa, gComa, gPalabra, gBolsa, gEuroT],
+    links: [yt('YrgmBxjT67U', 'El euro para niños'), { u: 'https://www.liveworksheets.com/worksheets/es/Matem%C3%A1ticas/Monedas_y_billetes/%C2%BFCu%C3%A1nto_dinero_hay$_zx815960zq', t: '¿Cuánto dinero hay?', k: 'Ficha interactiva en Liveworksheets', ic: '🧩' }],
+    learn: () => `<p>El <b>euro (€)</b> es la moneda de la Unión Europea. Se usa para comprar y vender cosas.</p>
+      <h3>Billetes · Euro-Scheine</h3>${moneyHTML([500, 1000, 2000, 5000, 10000, 20000])}
+      <h3>Monedas · Münzen</h3>${moneyHTML([200, 100, 50, 20, 10, 5, 2, 1])}
+      <div class="ex">100 céntimos = 1 euro<small>Los céntimos son una parte del euro.</small></div>
+      <h3>Escribir con coma</h3><p>Antes de la coma van los euros. Después van los céntimos, siempre con <b>dos cifras</b>.</p><div class="ex">12 € y 37 ct = 12,37 €<small>3 € y 5 ct = 3,05 € (¡no 3,5!)</small></div>
+      <div class="voc"><span><b>das Geld</b> el dinero</span><span><b>der Schein</b> el billete</span><span><b>die Münze</b> la moneda</span><span><b>Wie viel Euro?</b> ¿cuántos euros?</span></div>` },
+  { id: 'cambio', emoji: '🔁', name: 'Puente del Cambio', de: 'Euro ↔ Cent', c: '#2f6fd6',
+    gens: [gE2C, gE2C, gE2C, gE2C, gC2E, gC2E, gC2E, gC2E],
+    links: [yt('Rg5cm8rc1Fs', 'Euros y céntimos')],
+    learn: () => `<div class="ex">1 EURO = 100 CÉNTIMOS</div>
+      <h3>De euros a céntimos</h3><p>Cada euro son 100 céntimos. Después sumas los céntimos que ya había.</p><div class="ex">3 € = 300 cts &nbsp;·&nbsp; 3,50 € = 350 cts<small>2,75 € = 275 cts · 1,05 € = 105 cts · 0,08 € = 8 cts</small></div>
+      <h3>De céntimos a euros</h3><p>Cada 100 céntimos forman 1 euro. Lo que sobra va después de la coma.</p><div class="ex">450 cts = 4,50 € &nbsp;·&nbsp; 67 cts = 0,67 €<small>30 cts = 0,30 € · 200 cts = 2,00 €</small></div>` },
+  { id: 'tienda', emoji: '🛍️', name: 'Mercado de la Piscina', de: 'Sachaufgaben · Mit Geld rechnen', c: '#d9367f',
+    gens: [gEntrada, gVueltas, gVueltas, gDoble, gDoble, gSumaComa, gSumaComa, gDialogo],
+    links: [],
+    learn: () => `<p>En un problema (<b class="de">Sachaufgabe</b>) lee con calma, piensa qué te preguntan, haz la cuenta y escribe la respuesta con su unidad.</p>
+      <h3>El cambio · das Rückgeld</h3><div class="ex">Lo que pagas − lo que cuesta = el cambio<small>Pago con 20 € algo de 14 €: 20 − 14 = 6 €</small></div>
+      <h3>Doble y mitad</h3><div class="ex">Doble de 240 = 240 + 240 = 480<small>Mitad de 460 = 230, porque 230 + 230 = 460</small></div>
+      <h3>Frases de la tienda</h3><div class="voc"><span><b>Guten Tag!</b> ¡Buenos días!</span><span><b>Was möchtest du kaufen?</b> ¿Qué quieres comprar?</span><span><b>Was kostet es?</b> ¿Cuánto cuesta?</span><span><b>Es kostet …</b> Cuesta …</span><span><b>Alles klar.</b> Todo claro.</span></div>` },
+  { id: 'medidas', emoji: '📏', name: 'Taller de las Medidas', de: 'Längen: Meter, Zentimeter, Millimeter', c: '#0f7fa8',
+    gens: [gReglaCm, gReglaCm, gReglaMm, gReglaMm, gConv, gConv, gConv, gMyCm, gUnidad, gOrdLong, gMedT],
+    links: [yt('D-Txj8PaB_I', 'Unidades de medida: centímetro y metro'), yt('bxm3IMxUKZM', 'El metro y el centímetro'), yt('gYF0bIXP9ZQ', 'Conozcamos el milímetro'),
+      { u: 'https://es.liveworksheets.com/zf2206725xd', t: 'Vamos a jugar a medir objetos', k: 'Ficha interactiva en Liveworksheets', ic: '🧩' },
+      { u: 'https://wordwall.net/es/resource/17997284/metros-cent%C3%ADmetros-y-mil%C3%ADmetros', t: 'Metros, centímetros y milímetros', k: 'Juego en Wordwall', ic: '🎯' }],
+    learn: () => `<p>El <b>metro (m)</b> es la unidad principal para medir longitudes. Para cosas más pequeñas usamos el decímetro (dm), el <b>centímetro (cm)</b> y el <b>milímetro (mm)</b>.</p>
+      <div class="ex">1 m = 10 dm = 100 cm = 1 000 mm<small>1 cm = 10 mm</small></div>
+      ${rulerSVG({ max: narrow() ? 7 : 12, from: 0, to: 36, emoji: '🔋', color: '#5d6b7a' })}
+      <p>La pila llega a 3 cm y 6 rayitas más: 30 mm + 6 mm = <b>36 mm</b>.</p>
+      <h3>Para medir bien</h3><ul><li>Pon el inicio del objeto en el <b>0</b> de la regla.</li><li>Si no empieza en 0, resta: final − inicio.</li><li>Las rayitas pequeñas son milímetros.</li></ul>
+      <div class="ex">123 cm = 1 m y 23 cm<small>3 cm y 6 mm = 36 mm · 60 mm = 6 cm</small></div>
+      <div class="voc"><span><b>die Länge</b> la longitud</span><span><b>das Lineal</b> la regla</span><span><b>lang</b> largo</span><span><b>messen</b> medir</span></div>` }
+];
+const WBY = Object.fromEntries(WORLDS.map(w => [w.id, w]));
+const STICKERS = ['🦄', '🐙', '🦖', '🚀', '🌈', '🍕', '🎸', '🧁', '🐳', '🦊', '🐼', '🦋', '🍭', '⚽', '🎨', '🪐', '🧩', '🎻', '🦩', '🐢', '🍉', '🤖', '🐝', '🎠', '🦜', '🍩', '🛼', '🐬', '🌻', '🍓'];
+const JOKES = ['¿Qué le dijo el 0 al 8? ¡Qué cinturón tan bonito!', '¿Qué le dice el 1 al 10? Para ser como yo, tienes que ser sin-cero.', '¿Cuál es el colmo de un matemático? Tener muchos problemas.', '¿Por qué el libro de mate está triste? Porque tiene demasiados problemas.', '¿Qué hace una abeja en el gimnasio? ¡Zum-ba!', '¿Qué le dijo un pez a otro pez? ¡Nada, nada!', 'Truco: después de la coma, los céntimos SIEMPRE llevan dos cifras.', 'Truco: si te piden Nachbarzehner, la respuesta termina en un solo 0.', 'Truco: en la regla, empieza a medir desde el 0.', 'Soy Zifri el erizo. En alemán erizo se dice „der Igel“.'];
+const LOGROS = [
+  ['🌟', 'Primera estrella', 'Gana tu primera estrella en una isla', () => Object.values(S.stars).some(v => v > 0)],
+  ['🔥', 'Racha de 5', 'Acierta 5 seguidas a la primera', () => S.maxCombo >= 5],
+  ['🗺️', 'Mapa completo', 'Consigue estrellas en las 7 islas', () => WORLDS.every(w => S.stars[w.id] > 0)],
+  ['💎', 'Triple brillo', '3 estrellas en las 7 islas', () => WORLDS.every(w => S.stars[w.id] >= 3)],
+  ['📅', 'Tres días seguidos', 'Estudia 3 días seguidos', () => S.maxStreak >= 3],
+  ['🧩', 'Coleccionista', 'Reúne 10 stickers', () => S.stickers.length >= 10],
+  ['🐉', 'Doma dragones', 'Vence al Dragón del Examen', () => S.boss]
+];
+
+/* ---------- Perfil y avatar ---------- */
+const AV = {
+  skin: ['#f9d9bd', '#efc29d', '#d39e6f', '#a56b43', '#6e432a'],
+  hairStyle: ['corta', 'de lado', 'copete', 'puntas', 'rapado', 'degradado', 'mohicano', 'tazón', 'cortina', 'rizos cortos', 'melena', 'rizos', 'afro', 'larga', 'ondas', 'flequillo', 'coletas', 'cola', 'trenza', 'moño', 'chonguitos'],
+  hair: ['#8a3fc7', '#b77ee0', '#5a2482', '#6a5be0', '#e0577c', '#f39ac0', '#2f7fe0', '#1fb5a8', '#c4302b', '#2b1d14', '#6b3f22', '#c27a3c', '#e9c766', '#c8ccd4'],
+  eyes: ['puntos', 'felices', 'pestañas', 'grandes', 'guiño'],
+  mouth: ['sonrisa', 'sonrisota', 'dientes', 'lengua', 'gatito', 'beso', 'tímida', 'sorpresa', 'seria', 'triste'],
+  shadow: ['nada', '#b77ee0', '#8a3fc7', '#f39ac0', '#ff4f81', '#5fb7ff', '#1fb5a8', '#f5c400'],
+  cheekShape: ['redondas', 'óvalo', 'corazones', 'rayitas', 'nada'],
+  cheekColor: ['#ff7f96', '#ff4f81', '#f39ac0', '#b77ee0', '#ff8a3d', '#e84a4a'],
+  gems: ['nada', 'ojos', 'frente', 'mejillas', 'estrellas', 'corazón'],
+  gemColor: ['#ffffff', '#f39ac0', '#b77ee0', '#8a3fc7', '#5fb7ff', '#f5c400'],
+  acc: ['nada', 'gafas', 'gafas de sol', 'gorra', 'gorra atrás', 'cinta', 'antifaz', 'pirata', 'dino', 'gorro', 'audífonos', 'rayo', 'balón', 'estrella', 'corona', 'nota', 'pecas', 'lazo', 'diadema', 'flor', 'mariposa', 'arcoíris'],
+  shirt: ['#8a3fc7', '#d42a3a', '#11877b', '#7a4fd0', '#e9a800', '#2f6fd6', '#ef7fb0', '#1fb5a8', '#ff8a3d', '#2f3542', '#f4f4f4'],
+  bg: ['#cfe6ff', '#ffe1ea', '#e3f6d8', '#fff0c2', '#e8e0ff', '#ffd9c2', '#d9c2ff', '#c2f0ec', '#ffd1f0', '#dfe4ea']
+};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let profile = null, draft = null, avN = 0;
+try { profile = JSON.parse(localStorage.getItem('repaso-perfil')); } catch (e) {}
+const DEF = { mouth: 'sonrisa', cheekShape: 'redondas', cheekColor: '#ff7f96', shadow: 'nada', gems: 'nada', gemColor: '#ffffff' };
+const randomProfile = name => { const p = { name }; Object.keys(AV).forEach(k => p[k] = pick(AV[k])); return p; };
+
+function avatarSVG(p, mood, vb) {
+  if (!p) return '';
+  p = { ...DEF, ...p };
+  const H = p.hair, S = p.skin, id = 'avc' + (++avN), hs = p.hairStyle;
+  let s = `<svg viewBox="${vb || '0 0 120 120'}" preserveAspectRatio="xMidYMid slice" class="av" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="60" cy="60" r="60"/></clipPath></defs><g clip-path="url(#${id})">`;
+  s += `<rect width="120" height="120" fill="${p.bg}"/>`;
+  if (hs === 'larga') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 L97 104 Q60 112 23 104Z" fill="${H}"/>`;
+  if (hs === 'coletas') s += `<circle cx="23" cy="64" r="14" fill="${H}"/><circle cx="97" cy="64" r="14" fill="${H}"/><circle cx="31" cy="56" r="4" fill="${p.shirt}"/><circle cx="89" cy="56" r="4" fill="${p.shirt}"/>`;
+  if (hs === 'moño') s += `<circle cx="60" cy="22" r="14" fill="${H}"/>`;
+  if (hs === 'rizos') s += [[32, 40], [44, 27], [60, 23], [76, 27], [88, 40], [29, 57], [91, 57], [31, 72], [89, 72]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="13" fill="${H}"/>`).join('');
+  if (hs === 'afro') s += `<circle cx="60" cy="50" r="42" fill="${H}"/>`;
+  if (hs === 'ondas') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 Q101 72 94 84 Q101 96 93 110 L27 110 Q19 96 26 84 Q19 72 27 60Z" fill="${H}"/>`;
+  if (hs === 'flequillo') s += `<path d="M25 62 Q23 21 60 21 Q97 21 95 62 L95 84 Q60 90 25 84Z" fill="${H}"/>`;
+  if (hs === 'cola') s += `<path d="M84 36 Q112 46 104 92 Q98 72 86 60Z" fill="${H}"/><circle cx="88" cy="42" r="4.5" fill="${p.shirt}"/>`;
+  if (hs === 'trenza') s += [[30, 72], [27, 84], [30, 96], [27, 108]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7.5" fill="${H}"/>`).join('') + `<circle cx="27" cy="116" r="3.5" fill="${p.shirt}"/>`;
+  if (hs === 'chonguitos') s += `<circle cx="35" cy="30" r="13" fill="${H}"/><circle cx="85" cy="30" r="13" fill="${H}"/>`;
+  if (hs === 'melena') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 L95 82 Q86 90 82 74 L38 74 Q34 90 25 82Z" fill="${H}"/>`;
+  s += `<path d="M16 120 Q18 92 60 92 Q102 92 104 120Z" fill="${p.shirt}"/>`;
+  s += `<rect x="52" y="78" width="16" height="16" fill="${S}"/>`;
+  s += `<circle cx="31" cy="60" r="5" fill="${S}"/><circle cx="89" cy="60" r="5" fill="${S}"/><circle cx="60" cy="58" r="29" fill="${S}"/>`;
+  if (hs === 'corta' || hs === 'larga') s += `<path d="M30 56 Q28 26 60 26 Q92 26 90 56 Q86 42 72 38 Q60 46 44 40 Q34 44 30 56Z" fill="${H}"/>`;
+  if (['coletas', 'moño', 'cola', 'trenza', 'chonguitos'].includes(hs)) s += `<path d="M31 52 Q32 27 60 27 Q88 27 89 52 Q75 36 60 36 Q45 36 31 52Z" fill="${H}"/>`;
+  if (hs === 'rizos' || hs === 'afro') s += [[40, 36, 10], [52, 31, 10], [67, 31, 10], [80, 36, 10], [34, 46, 8], [86, 46, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
+  if (hs === 'ondas') s += `<path d="M30 60 Q27 25 60 25 Q93 25 90 60 Q88 40 70 33 Q48 34 30 60Z" fill="${H}"/>`;
+  if (hs === 'flequillo') s += `<path d="M30 52 Q30 25 60 25 Q90 25 90 52Z" fill="${H}"/>`;
+  if (hs === 'degradado') s += `<path d="M31 50 Q31 28 60 28 Q89 28 89 50 Q76 38 60 38 Q44 38 31 50Z" fill="${H}" opacity=".4"/><path d="M36 41 Q37 21 60 21 Q83 21 84 41 Q72 34 60 34 Q48 34 36 41Z" fill="${H}"/>`;
+  if (hs === 'mohicano') s += `<path d="M31 50 Q31 29 60 29 Q89 29 89 50 Q76 39 60 39 Q44 39 31 50Z" fill="${H}" opacity=".3"/><path d="M51 42 Q47 14 60 6 Q73 14 69 42 Q60 37 51 42Z" fill="${H}"/>`;
+  if (hs === 'tazón') s += `<path d="M29 59 Q25 23 60 23 Q95 23 91 59 Q90 49 87 49 L33 49 Q30 49 29 59Z" fill="${H}"/>`;
+  if (hs === 'cortina') s += `<path d="M29 61 Q26 23 60 25 Q94 23 91 61 Q87 42 60 31 Q33 42 29 61Z" fill="${H}"/>`;
+  if (hs === 'rizos cortos') s += [[38, 37, 9], [48, 30, 9], [60, 27, 9], [72, 30, 9], [82, 37, 9], [33, 47, 7], [87, 47, 7]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
+  if (hs === 'melena') s += `<path d="M30 58 Q26 26 58 24 Q93 23 90 58 Q89 44 80 37 Q58 45 39 33 Q32 44 30 58Z" fill="${H}"/>`;
+  if (hs === 'rapado') s += `<path d="M31 50 Q31 28 60 28 Q89 28 89 50 Q76 38 60 38 Q44 38 31 50Z" fill="${H}" opacity=".9"/>`;
+  if (hs === 'de lado') s += `<path d="M30 57 Q26 26 58 24 Q93 23 90 57 Q89 44 80 37 Q58 45 39 33 Q32 44 30 57Z" fill="${H}"/>`;
+  if (hs === 'copete') s += `<path d="M30 55 Q27 30 46 24 Q52 12 72 16 Q92 22 90 55 Q86 41 72 39 Q54 44 42 37 Q33 44 30 55Z" fill="${H}"/>`;
+  if (hs === 'puntas') s += `<path d="M30 55 L32 31 L40 39 L44 21 L52 34 L60 16 L68 34 L76 21 L80 39 L88 31 L90 55 Q76 40 60 40 Q44 40 30 55Z" fill="${H}" stroke="${H}" stroke-width="2" stroke-linejoin="round"/>`;
+  if (p.shadow !== 'nada') s += `<ellipse cx="49" cy="54.5" rx="7.5" ry="4.5" fill="${p.shadow}" opacity=".55"/><ellipse cx="71" cy="54.5" rx="7.5" ry="4.5" fill="${p.shadow}" opacity=".55"/>`;
+  if (p.eyes === 'guiño') s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><path d="M66 58 Q71 62 76 58" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  else if (p.eyes === 'grandes') s += `<ellipse cx="49" cy="57" rx="6" ry="7" fill="#fff" stroke="#2b2b2b" stroke-width="1.5"/><ellipse cx="71" cy="57" rx="6" ry="7" fill="#fff" stroke="#2b2b2b" stroke-width="1.5"/><circle cx="50" cy="58" r="3.6" fill="#2b2b2b"/><circle cx="72" cy="58" r="3.6" fill="#2b2b2b"/><circle cx="51.3" cy="56.6" r="1.2" fill="#fff"/><circle cx="73.3" cy="56.6" r="1.2" fill="#fff"/>`;
+  else if (p.eyes === 'felices') s += `<path d="M44 59 Q49 53 54 59 M66 59 Q71 53 76 59" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  else s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="71" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><circle cx="72.2" cy="56.8" r="1.2" fill="#fff"/>`;
+  if (p.eyes === 'pestañas') s += `<path d="M44 54 L41 51 M46.5 52.5 L45 49 M76 54 L79 51 M73.5 52.5 L75 49" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>`;
+  const cc = p.cheekColor, csh = p.cheekShape;
+  const heart = (x, y) => `<path d="M${x} ${y + 4} C${x - 7} ${y - 1} ${x - 4} ${y - 7} ${x} ${y - 3} C${x + 4} ${y - 7} ${x + 7} ${y - 1} ${x} ${y + 4}Z" fill="${cc}" opacity=".7"/>`;
+  if (csh === 'redondas') s += `<circle cx="43" cy="68" r="5" fill="${cc}" opacity=".45"/><circle cx="77" cy="68" r="5" fill="${cc}" opacity=".45"/>`;
+  else if (csh === 'óvalo') s += `<ellipse cx="42" cy="68" rx="7.5" ry="4" fill="${cc}" opacity=".45"/><ellipse cx="78" cy="68" rx="7.5" ry="4" fill="${cc}" opacity=".45"/>`;
+  else if (csh === 'corazones') s += heart(43, 68) + heart(77, 68);
+  else if (csh === 'rayitas') s += `<g stroke="${cc}" stroke-width="1.8" stroke-linecap="round" opacity=".85">` + [37, 41, 45].map(x => `<path d="M${x} 70 L${x + 3} 66"/>`).join('') + [72, 76, 80].map(x => `<path d="M${x} 66 L${x + 3} 70"/>`).join('') + `</g>`;
+  const L = '#7a2633', ln = d => `<path d="${d}" stroke="${L}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const MOUTHS = {
+    sonrisa: ln('M52 70 Q60 77 68 70'),
+    sonrisota: `<path d="M49 67 Q60 83 71 67Z" fill="${L}"/><path d="M53 70 Q60 75 67 70" stroke="#fff" stroke-width="2" fill="none"/>`,
+    dientes: `<path d="M50 68 Q60 80 70 68Z" fill="${L}"/><path d="M51.5 69 L68.5 69 Q66 72.5 60 72.5 Q54 72.5 51.5 69Z" fill="#fff"/>`,
+    lengua: `<path d="M50 68 Q60 79 70 68Z" fill="${L}"/><path d="M57 72 Q57 80 62 80 Q67 80 67 72Z" fill="#ff7f96" stroke="${L}" stroke-width="1.2"/><path d="M62 73 L62 77" stroke="#e0577c" stroke-width="1.2"/>`,
+    gatito: ln('M52 70 Q56 74.5 60 70 Q64 74.5 68 70'),
+    beso: `<path d="M57.5 67.5 Q62 69.5 59 71 Q62.5 72.5 57.5 75" stroke="${L}" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M73 75 C69.5 72.5 70.5 69 73 71 C75.5 69 76.5 72.5 73 75Z" fill="#ff4f81"/>`,
+    'tímida': ln('M55 71 Q61 74.5 66 70'),
+    sorpresa: `<ellipse cx="60" cy="72" rx="4" ry="4.5" fill="${L}"/>`,
+    seria: ln('M53 71 L67 71'),
+    triste: ln('M52 74 Q60 68 68 74')
+  };
+  s += MOUTHS[mood === 'happy' ? 'sonrisota' : mood === 'think' ? 'sorpresa' : p.mouth] || MOUTHS.sonrisa;
+  const gc = p.gemColor;
+  const pearl = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${gc}" stroke="rgba(0,0,0,.28)" stroke-width=".6"/><circle cx="${x - r * .35}" cy="${y - r * .35}" r="${r * .35}" fill="#fff" opacity=".9"/>`;
+  const spark = (x, y, r) => `<path d="M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r}Z" fill="${gc}" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>`;
+  if (p.gems === 'ojos') s += [[42, 63], [45.5, 65.5], [49.5, 66.5], [78, 63], [74.5, 65.5], [70.5, 66.5]].map(([x, y]) => pearl(x, y, 1.8)).join('');
+  if (p.gems === 'frente') s += [[50, 46], [55, 44], [60, 43], [65, 44], [70, 46]].map(([x, y], i) => pearl(x, y, i === 2 ? 2.6 : 2)).join('');
+  if (p.gems === 'mejillas') s += [[36, 65], [37.5, 70.5], [84, 65], [82.5, 70.5]].map(([x, y]) => pearl(x, y, 2)).join('');
+  if (p.gems === 'estrellas') s += spark(38, 51, 4) + spark(82, 51, 4) + spark(84, 66, 3);
+  if (p.gems === 'corazón') s += `<path d="M76 70 C71 66.5 73 62 76 64.5 C79 62 81 66.5 76 70Z" fill="${gc}" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>`;
+  if (p.acc === 'gafas') s += `<g stroke="#2f3542" stroke-width="2.6" fill="#fff" fill-opacity=".18"><circle cx="49" cy="58" r="8.5"/><circle cx="71" cy="58" r="8.5"/><path d="M57.5 58 L62.5 58" fill="none"/></g>`;
+  if (p.acc === 'lazo') s += `<path d="M84 32 L71 23 L72 41Z M84 32 L97 23 L96 41Z" fill="#ff4f81"/><circle cx="84" cy="32" r="4.5" fill="#d6265a"/>`;
+  if (p.acc === 'corona') s += `<path d="M41 30 L45 14 L53 24 L60 9 L67 24 L75 14 L79 30Z" fill="#f5c400" stroke="#c99a00" stroke-width="2" stroke-linejoin="round"/>`;
+  if (p.acc === 'flor') s += [[84, 26], [91, 31], [88, 39], [80, 39], [77, 31]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5.5" fill="#fff" stroke="#f2a7c0"/>`).join('') + `<circle cx="84" cy="33" r="4" fill="#f5b301"/>`;
+  if (p.acc === 'estrella') s += `<polygon points="86,20 89,28 97,28 91,33 93,41 86,36 79,41 81,33 75,28 83,28" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (p.acc === 'diadema') s += `<path d="M31 46 Q32 22 60 22 Q88 22 89 46" stroke="#ff4f81" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="60" cy="22" r="4" fill="#fff"/>`;
+  if (p.acc === 'mariposa') s += `<g transform="translate(85 32)"><ellipse cx="-6" cy="-4" rx="7" ry="6" fill="#8a3fc7"/><ellipse cx="6" cy="-4" rx="7" ry="6" fill="#8a3fc7"/><ellipse cx="-5" cy="5" rx="5" ry="4" fill="#b77ee0"/><ellipse cx="5" cy="5" rx="5" ry="4" fill="#b77ee0"/><rect x="-1.5" y="-8" width="3" height="16" rx="1.5" fill="#2f3542"/></g>`;
+  if (p.acc === 'arcoíris') s += `<g fill="none" stroke-width="3.5" stroke-linecap="round"><path d="M73 38 A11 11 0 0 1 95 38" stroke="#e84a4a"/><path d="M76.5 38 A7.5 7.5 0 0 1 91.5 38" stroke="#f5c400"/><path d="M80 38 A4 4 0 0 1 88 38" stroke="#2f7fe0"/></g>`;
+  if (p.acc === 'nota') s += `<g fill="#2f3542"><ellipse cx="88" cy="40" rx="5.5" ry="4.2"/><rect x="91.5" y="18" width="2.6" height="22"/><path d="M94 18 Q103 22 101 31 Q99 25 94 25Z"/></g>`;
+  if (p.acc === 'audífonos') s += `<path d="M28 60 Q26 17 60 17 Q94 17 92 60" stroke="#2f3542" stroke-width="6" fill="none"/><rect x="22" y="51" width="13" height="21" rx="5" fill="#ff4f81"/><rect x="85" y="51" width="13" height="21" rx="5" fill="#ff4f81"/>`;
+  if (p.acc === 'gorro') s += `<path d="M29 50 Q29 14 60 14 Q91 14 91 50Z" fill="#ff8a3d"/><rect x="27" y="44" width="66" height="10" rx="5" fill="#e06a1f"/><circle cx="60" cy="12" r="7" fill="#fff"/>`;
+  if (p.acc === 'gafas de sol') s += `<rect x="38" y="52" width="20" height="12" rx="5" fill="#1d2330"/><rect x="62" y="52" width="20" height="12" rx="5" fill="#1d2330"/><path d="M58 56H62M38 56L31 54M82 56L89 54" stroke="#1d2330" stroke-width="2.5" fill="none"/><path d="M42 55L47 55M66 55L71 55" stroke="#fff" stroke-width="1.5" opacity=".6"/>`;
+  if (p.acc === 'antifaz') s += `<path d="M35 52 Q48 45 60 52 Q72 45 85 52 Q87 63 76 66 Q66 67 60 60 Q54 67 44 66 Q33 63 35 52Z" fill="#d42a3a"/><ellipse cx="49" cy="58" rx="5.5" ry="4.5" fill="#fff"/><ellipse cx="71" cy="58" rx="5.5" ry="4.5" fill="#fff"/><circle cx="49" cy="58" r="2.6" fill="#2b2b2b"/><circle cx="71" cy="58" r="2.6" fill="#2b2b2b"/>`;
+  if (p.acc === 'cinta') s += `<path d="M31 43 Q60 33 89 43 L89 50 Q60 40 31 50Z" fill="#e2432a"/><path d="M88 45 L101 40 L98 49 L104 56 L91 51Z" fill="#c2321c"/>`;
+  if (p.acc === 'gorra atrás') s += `<path d="M30 45 Q30 15 60 15 Q90 15 90 45Z" fill="#11877b"/><path d="M31 40 Q19 39 14 47 Q24 50 33 46Z" fill="#0b5f57"/><path d="M47 45 Q60 36 73 45" stroke="#0b5f57" stroke-width="3" fill="none"/>`;
+  if (p.acc === 'pirata') s += `<path d="M22 41 Q40 31 43 15 Q60 5 77 15 Q80 31 98 41 Q60 30 22 41Z" fill="#1d2330"/><circle cx="60" cy="22" r="5.5" fill="#fff"/><circle cx="58" cy="21" r="1.3" fill="#1d2330"/><circle cx="62" cy="21" r="1.3" fill="#1d2330"/><path d="M53 30L67 34M67 30L53 34" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`;
+  if (p.acc === 'dino') s += `<path d="M47 17L51 5L57 15ZM56 14L61 1L67 14ZM66 15L72 5L76 18Z" fill="#f0a202"/><path d="M29 49 Q27 14 60 14 Q93 14 91 49 Q77 35 60 35 Q43 35 29 49Z" fill="#3aa655"/><circle cx="45" cy="26" r="4.5" fill="#fff"/><circle cx="75" cy="26" r="4.5" fill="#fff"/><circle cx="45" cy="26.5" r="2" fill="#2b2b2b"/><circle cx="75" cy="26.5" r="2" fill="#2b2b2b"/>`;
+  if (p.acc === 'gorra') s += `<path d="M30 45 Q30 15 60 15 Q90 15 90 45Z" fill="#2f6fd6"/><path d="M56 38 Q92 34 106 47 Q90 52 56 47Z" fill="#1f4f9e"/><circle cx="60" cy="16" r="3" fill="#1f4f9e"/>`;
+  if (p.acc === 'rayo') s += `<polygon points="90,14 77,33 85,33 79,48 96,27 87,27" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (p.acc === 'balón') s += `<circle cx="88" cy="30" r="10" fill="#fff" stroke="#2f3542" stroke-width="2"/><polygon points="88,25 92.5,28.5 90.8,33.5 85.2,33.5 83.5,28.5" fill="#2f3542"/><path d="M88 25V20M92.5 28.5L97 27M90.8 33.5L93.5 38M85.2 33.5L82.5 38M83.5 28.5L79 27" stroke="#2f3542" stroke-width="1.5"/>`;
+  if (p.acc === 'pecas') s += [[41, 64], [45, 67], [40, 69], [79, 64], [75, 67], [80, 69]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.3" fill="#8a5a3c"/>`).join('');
+  return s + `</g></svg>`;
+}
+function showSetup() {
+  draft = profile ? { ...DEF, ...profile } : randomProfile('');
+  show('setup');
+  $('#nameIn').value = draft.name || '';
+  $('#setupMsg').textContent = '';
+  renderSetup();
+}
+function renderSetup() {
+  const rows = [['skin', 'Piel', 'c'], ['hairStyle', 'Peinado', 'a'], ['hair', 'Color de pelo', 'c'], ['eyes', 'Ojos', 'f'], ['shadow', 'Sombra de ojos', 'c'], ['mouth', 'Boca', 'f'], ['cheekShape', 'Forma de mejillas', 'f'], ['cheekColor', 'Color de mejillas', 'c'], ['gems', 'Perlitas', 'f'], ['gemColor', 'Color de perlitas', 'c'], ['acc', 'Accesorio', 'a'], ['shirt', 'Camiseta', 'c'], ['bg', 'Fondo', 'c']];
+  $('#setupBody').innerHTML = rows.map(([k, label, kind]) => `<div class="optrow"><div class="optlbl">${label}</div><div class="opts">${AV[k].map(v => {
+    const sel = draft[k] === v ? ' sel' : '';
+    if (kind === 'c') return v === 'nada'
+      ? `<button class="sw none${sel}" data-opt="${k}" data-val="nada" aria-label="${label}: nada"></button>`
+      : `<button class="sw${sel}" style="background:${v}" data-opt="${k}" data-val="${v}" aria-label="${label}"></button>`;
+    return `<button class="avopt${sel}" data-opt="${k}" data-val="${v}" aria-label="${label}: ${v}">${avatarSVG({ ...draft, [k]: v }, '', kind === 'f' ? '32 38 56 56' : null)}</button>`;
+  }).join('')}</div></div>`).join('');
+  $('#setupPreview').innerHTML = avatarSVG(draft, '');
+}
+function saveProfile() {
+  const name = $('#nameIn').value.trim();
+  if (!name) { $('#setupMsg').textContent = 'Escribe tu nombre para continuar.'; $('#nameIn').focus(); return; }
+  profile = { ...draft, name };
+  try { localStorage.setItem('repaso-perfil', JSON.stringify(profile)); } catch (e) {}
+  showHome();
+}
+const praise = () => { const p = pick(PRAISE); return profile && Math.random() < .5 ? p.replace(/!$/, ', ' + esc(profile.name) + '!') : p; };
+
+
+/* ---------- Mapa ---------- */
+const starStr = n => `<span class="on">${'★'.repeat(n)}</span>${'☆'.repeat(3 - n)}`;
+const linkHTML = l => `<a class="link" href="${l.u}" target="_blank" rel="noopener"><span class="ic">${l.ic}</span><span class="tx"><b>${l.t}</b><small>${l.k} · ${l.u.split('/')[2]}</small></span><span class="go">Abrir ↗</span></a>`;
+function showHome() {
+  if (!profile) { showSetup(); return; }
+  let kept = null; if (st && st.chest) { st.chest = false; kept = newSticker(); }
+  show('home');
+  const lvl = Math.floor(S.xp / 100) + 1;
+  $('#hud').innerHTML = `<button class="avbtn" data-act="setup" aria-label="Cambiar avatar">${avatarSVG(profile, '')}</button>
+    <div class="who"><div class="hi">¡Hola, ${esc(profile.name)}!</div><div class="lvl">${['🌱', '🌿', '🌳', '🚀', '🌟', '👑'][Math.min(5, lvl - 1)]} Nivel ${lvl}<span class="xpbar"><i style="width:${S.xp % 100}%"></i></span></div></div>
+    <div class="pills"><span class="pill">🪙 ${S.coins}</span><span class="pill">🔥 ${S.streak || 0} ${S.streak === 1 ? 'día' : 'días'}</span><button class="pill" data-act="album">📒 Álbum ${S.stickers.length}</button><button class="pill" data-act="sound" aria-label="Sonido">${S.sound ? '🔊' : '🔇'}</button></div>`;
+  const next = WORLDS.find(w => !(S.stars[w.id] > 0)) || WORLDS.slice().sort((a, b) => (S.stars[a.id] || 0) - (S.stars[b.id] || 0))[0];
+  $('#bubble').innerHTML = WORLDS.every(w => S.stars[w.id] > 0) && !S.boss ? '¡Ya visitaste todas las islas! El dragón te espera en el volcán. 🌋<small>Tócame si quieres un chiste.</small>' : `Hoy te recomiendo ${next.emoji} <b>${next.name}</b>.<small>Tócame si quieres un chiste.</small>`;
+  if (kept) $('#bubble').innerHTML = `Dejaste tu cofre sin abrir, así que te guardé el sticker ${kept} en el álbum.`;
+  $('#map').innerHTML = WORLDS.map(w => `<button class="isle" style="--c:${w.c}" data-world="${w.id}"><span class="blob">${w.emoji}</span><b>${w.name}</b><span class="st">${starStr(S.stars[w.id] || 0)}</span></button>`).join('') +
+    `<button class="isle boss" data-boss="1"><span class="blob">${S.boss ? '🏆' : '🐉'}</span><span><b>Volcán del Dragón</b><br><small>${S.boss ? '¡Ya lo venciste! ¿Otra batalla?' : 'El simulacro del examen: 15 retos de todas las islas'}</small></span></button>`;
+  $('#allLinks').innerHTML = WORLDS.flatMap(w => w.links).map(linkHTML).join('');
+}
+function showWorld(id) {
+  const w = WBY[id]; show('world');
+  $('#world').innerHTML = `<div class="bar"><button class="back" data-act="home">← Mapa</button></div>
+    <header class="whead" style="--c:${w.c}"><span class="blob">${w.emoji}</span><div><h1>${w.name}</h1><p class="de">${w.de}</p><div class="st">${starStr(S.stars[id] || 0)}</div></div></header>
+    <button class="main go" data-play="${id}">🎮 ¡Jugar! · 8 retos</button>
+    <section class="learn"><h2>📖 Aprende</h2>${w.learn()}</section>
+    ${w.links.length ? `<h2 style="margin-top:20px">📚 Material de apoyo</h2><div class="links">${w.links.map(linkHTML).join('')}</div>` : ''}
+    <button class="main go" data-play="${id}">🎮 ¡Jugar!</button>`;
+}
+
+/* ---------- Motor del juego ---------- */
+let st = null;
+function startWorld(id) {
+  const w = WBY[id], g = shuffle([...w.gens]);
+  st = { mode: 'world', w: id, qs: rep(8, (_, i) => g[i % g.length]()), i: 0, results: [], combo: 0, gc: 0 };
+  begin(w.emoji + ' ' + w.name);
+}
+function startBoss() {
+  const qs = WORLDS.flatMap(w => shuffle([...w.gens]).slice(0, 2).map(g => g()));
+  qs.push(pick(pick(WORLDS).gens)());
+  st = { mode: 'boss', qs: shuffle(qs), i: 0, results: [], combo: 0, gc: 0, hp: 20 };
+  begin('🌋 Volcán del Dragón');
+}
+function begin(title) { newQ(); show('play'); $('#modeTitle').textContent = title; render(); }
+function newQ() {
+  const q = st.qs[st.i];
+  st.ui = { inputs: (q.slots || []).map(() => ''), active: 0, placed: null, pick: null, wrong: [], ord: [], tries: 0, done: false, hint: false, reveal: false, fb: '', fbk: '' };
+  st.hit = false;
+}
+const cur = () => st.qs[st.i];
+const val = s => parseFloat(String(s).replace(',', '.'));
+const okSlot = (q, u, i) => u.inputs[i] !== '' && Math.round(val(u.inputs[i]) * 100) === Math.round(q.slots[i].ans * 100);
+
+function render() {
+  const q = cur(), u = st.ui, W = WBY[q.w];
+  $('#coinCount').textContent = '🪙 ' + S.coins;
+  $('#barAv').innerHTML = avatarSVG(profile, u.fbk === 'ok' ? 'happy' : (u.fbk === 'hint' || u.fbk === 'bad') ? 'think' : '');
+  $('#dragonBox').innerHTML = st.mode === 'boss' ? `<div class="dragon${st.hit ? ' hit' : ''}"><span class="dr">${st.hp > 0 ? '🐉' : '😵'}</span><div class="hp"><b>Dragón del Examen · ${st.hp} ❤️</b><div class="hpbar"><i style="width:${st.hp / 20 * 100}%"></i></div></div></div>` : '';
+  $('#dots').innerHTML = st.qs.map((_, i) => { const r = st.results[i]; let c = 'dot'; if (r) c += r.star ? ' s' : r.ok ? ' y' : ' n'; else if (i === st.i) c += ' now'; return `<span class="${c}"></span>`; }).join('');
+  let h = `<span class="tag" style="--c:${W.c}">${q.tag}</span>`;
+  h += `<p class="prompt">${q.prompt}${!u.done && !u.hinted ? '<button class="hintbtn" data-act="hint">💡 Pista</button>' : ''}</p>`;
+  if (q.kind === 'num') {
+    if (q.visual) h += q.visual(q, u);
+    h += `<div class="ansrow">` + q.slots.map((s, i) => {
+      let cls = 'slot'; if (u.done) cls += okSlot(q, u, i) ? ' ok' : ' bad'; else if (u.active === i) cls += ' active';
+      return `${s.pre ? `<span class="pre">${s.pre}</span>` : ''}<span class="slotcol"><button class="${cls}" data-slot="${i}" ${u.done ? 'disabled' : ''} aria-label="Casilla de respuesta">${u.inputs[i] || '&nbsp;'}</button>${s.cap ? `<small>${s.cap}</small>` : ''}</span>${s.unit ? `<span class="unit">${s.unit}</span>` : ''}`;
+    }).join('') + `</div>`;
+  } else if (q.kind === 'tap') {
+    const ti = (q.target - q.start) / q.step, marks = [];
+    if (u.placed !== null) marks.push({ pos: u.placed, color: u.done ? (u.placed === ti ? 'var(--ok)' : 'var(--bad)') : 'var(--teal)' });
+    if (u.reveal) marks.push({ pos: ti, color: 'var(--ok)', text: q.target });
+    h += lineSVG({ ...q, marks, tap: !u.done });
+    if (!u.done) h += u.placed === null ? '<p class="tapnote">👆 Toca la recta para poner tu flecha.</p>' : '<div class="nudge"><button class="k small" data-nudge="-1">◀ una rayita</button><button class="k small" data-nudge="1">una rayita ▶</button></div>';
+  } else if (q.kind === 'comp') {
+    const cls = u.done ? (u.pick === q.ans ? ' ok' : ' bad') : '';
+    h += `<div class="cmp"><span class="big">${q.L}</span><span class="slot${cls}">${u.done ? sg(u.reveal ? q.ans : u.pick) : '?'}</span><span class="big">${q.R}</span></div>`;
+    h += `<div class="signs">${[['>', 'mayor que'], ['<', 'menor que'], ['=', 'igual que']].map(([s, t]) => `<button class="sign" data-sign="${s}" ${u.done || u.wrong.includes(s) ? 'disabled' : ''}><b>${sg(s)}</b><small>${t}</small></button>`).join('')}</div>`;
+  } else if (q.kind === 'choice') {
+    if (q.visual) h += q.visual(q, u);
+    h += `<div class="opts">${q.opts.map((o, i) => `<button class="opt${u.done && i === q.ans ? ' right' : ''}" data-opt-i="${i}" ${u.done || u.wrong.includes(i) ? 'disabled' : ''}>${o}</button>`).join('')}</div>`;
+  } else if (q.kind === 'ord') {
+    const sorted = [...q.items].sort((a, b) => q.asc ? a.v - b.v : b.v - a.v), op = q.asc ? '&lt;' : '&gt;';
+    h += `<div class="ordslots">${q.items.map((_, i) => { const it = q.items[u.ord[i]]; let cls = ''; if (u.done && it) cls = it.v === sorted[i].v ? ' ok' : ' bad'; return (i ? `<span class="op">${op}</span>` : '') + `<button class="slot${cls}" data-oslot="${i}" ${u.done ? 'disabled' : ''}>${it ? it.label : '&nbsp;'}</button>`; }).join('')}</div>`;
+    h += `<div class="chips">${q.items.map((it, i) => `<button class="chip" data-chip="${i}" ${u.ord.includes(i) || u.done ? 'disabled' : ''}>${it.label}</button>`).join('')}</div>`;
+  }
+  $('#qarea').innerHTML = h;
+  $('#fb').className = 'fb ' + u.fbk; $('#fb').innerHTML = u.fb;
+  const needPad = q.kind === 'num' && !u.done;
+  $('#pad').classList.toggle('hidden', !needPad);
+  if (needPad) { const mid = q.comma ? `<button class="k" data-key="," aria-label="Coma">,</button>` : q.slots.length > 1 ? `<button class="k" data-key="tab" aria-label="Pasar a la otra casilla">⇄</button>` : '';
+    $('#pad').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(d => `<button class="k" data-key="${d}">${d}</button>`).join('') +
+      `<button class="k" data-key="del" aria-label="Borrar">⌫</button>${mid}<button class="k check${mid ? '' : ' wide'}" data-act="check">✓ Comprobar</button>`; }
+  const mb = $('#mainBtn'), instant = q.kind === 'comp' || q.kind === 'choice';
+  mb.classList.toggle('hidden', (instant || needPad) && !u.done);
+  const last = st.i === st.qs.length - 1 || (st.mode === 'boss' && st.hp <= 0);
+  mb.textContent = u.done ? (last ? 'Ver resultado' : 'Siguiente →') : 'Comprobar';
+  mb.classList.toggle('go', u.done);
+}
+function judge(ok) {
+  const q = cur(), u = st.ui, ex = typeof q.explain === 'function' ? q.explain(q) : (q.explain || (q.kind === 'ord' ? 'El orden correcto es: ' + [...q.items].sort((a, b) => q.asc ? a.v - b.v : b.v - a.v).map(i => i.label).join(q.asc ? ' &lt; ' : ' &gt; ') + '.' : ''));
+  if (ok) {
+    u.done = true; const first = u.tries === 0;
+    st.results.push({ w: q.w, ok: true, star: first });
+    st.combo = first ? st.combo + 1 : 0; S.maxCombo = Math.max(S.maxCombo, st.combo);
+    const c = (first ? 2 : 1) + (first && st.combo >= 3 ? 1 : 0);
+    S.coins += c; S.xp += first ? 10 : 5; st.gc += c; save();
+    if (st.mode === 'boss') { st.hp = Math.max(0, st.hp - (first ? 2 : 1)); st.hit = true; }
+    u.fb = `${first ? '⭐ ' : ''}${praise()} <span class="gain">+${c} 🪙</span>${st.combo >= 3 ? ` <span class="combo">🔥 ¡${st.combo} seguidas!</span>` : ''}${st.mode === 'boss' ? ` <span class="combo">${first ? '💥 ¡Golpe doble al dragón!' : '👊 ¡Le diste!'}</span>` : ''}<div class="expl">${ex}</div>`;
+    u.fbk = 'ok'; sfx('ok'); if (st.combo === 5) confetti(['🔥', '⭐']);
+  } else {
+    u.tries++; st.hit = false; if (u.tries >= 2) sfx('bad');
+    if (u.tries >= 2) { u.done = true; u.reveal = true; st.combo = 0; st.results.push({ w: q.w, ok: false, star: false }); u.fb = `No pasa nada, así se hace:<div class="expl">${ex}</div>`; u.fbk = 'bad'; }
+    else { u.stale = u.inputs.map(() => true); u.fb = 'Todavía no. ' + (typeof q.hint === 'function' ? q.hint(q, u) : q.hint); u.fbk = 'hint'; u.hinted = true; if (q.canHint) u.hint = true; }
+  }
+  render();
+}
+function action() {
+  const u = st.ui, q = cur();
+  if (u.done) { if (st.i === st.qs.length - 1 || (st.mode === 'boss' && st.hp <= 0)) showResult(); else { st.i++; newQ(); render(); window.scrollTo({ top: 0 }); } return; }
+  let res = null;
+  if (q.kind === 'num') res = u.inputs.some(x => x === '' || x === ',') ? null : q.slots.every((_, i) => okSlot(q, u, i));
+  else if (q.kind === 'tap') res = u.placed === null ? null : u.placed === (q.target - q.start) / q.step;
+  else if (q.kind === 'ord') { const sorted = [...q.items].sort((a, b) => q.asc ? a.v - b.v : b.v - a.v); res = u.ord.length < q.items.length ? null : u.ord.every((ix, i) => q.items[ix].v === sorted[i].v); }
+  if (res === null) { if (q.kind === 'num') { const e = u.inputs.findIndex(x => x === '' || x === ','); if (e >= 0) u.active = e; } u.fb = q.kind === 'tap' ? 'Toca primero la recta para poner tu flecha.' : q.kind === 'ord' ? 'Toca todos los números para ordenarlos.' : 'Completa tu respuesta primero.'; u.fbk = 'hint'; render(); return; }
+  judge(res);
+}
+function typeKey(k) {
+  const u = st.ui, q = cur(); if (u.done || q.kind !== 'num') return;
+  let v = u.inputs[u.active];
+  if (u.stale && u.stale[u.active] && k !== 'tab') { u.stale[u.active] = false; if (k !== 'del') v = ''; }
+  if (k === 'del') v = v.slice(0, -1);
+  else if (k === 'tab') { u.active = (u.active + 1) % u.inputs.length; render(); return; }
+  else if (k === ',') { if (q.comma && !v.includes(',') && v.length) v += ','; }
+  else if (v.length < 6) v += k;
+  u.inputs[u.active] = v;
+  if (u.fb.startsWith('Completa')) u.fb = '';
+  render();
+}
+
+/* ---------- Resultado, cofre y álbum ---------- */
+const today = d => { const x = new Date(Date.now() - (d || 0) * 864e5); return x.getFullYear() + '-' + (x.getMonth() + 1) + '-' + x.getDate(); };
+function newSticker() {
+  const left = STICKERS.filter(s => !S.stickers.includes(s));
+  if (!left.length) { S.coins += 10; save(); return null; }
+  const s = pick(left); S.stickers.push(s); save(); return s;
+}
+function showResult() {
+  const n = st.results.length, s = st.results.filter(r => r.star).length, ok = st.results.filter(r => r.ok).length, pct = s / Math.max(1, n);
+  if (S.day !== today()) { S.streak = S.day === today(1) ? S.streak + 1 : 1; S.day = today(); S.maxStreak = Math.max(S.maxStreak, S.streak); }
+  let head, body = '', stars = 0, chest = false;
+  if (st.mode === 'boss') {
+    const win = st.hp <= 0;
+    if (win) { if (!S.boss) { S.boss = true; if (!S.stickers.includes('👑')) S.stickers.push('👑'); } S.coins += 30; }
+    head = win ? `<div class="prize">🏆</div><h1>¡Venciste al dragón!</h1><p>${esc(profile.name)}, ya puedes con el examen. Ganaste <b>30 🪙</b> y el sticker especial 👑.</p>`
+      : `<div class="prize">🐉</div><h1>El dragón escapó</h1><p>Le quedaron <b>${st.hp} ❤️</b>. Entrena las islas de abajo y vuelve por la revancha.</p>`;
+    body = '<div class="topics">' + WORLDS.map(w => { const rs = st.results.filter(r => r.w === w.id), g = rs.filter(r => r.star).length; return rs.length ? `<div class="trow"><span>${w.emoji} ${w.name}: <b>${g}/${rs.length}</b></span>${g < rs.length ? `<button data-world="${w.id}">Practicar</button>` : '<span>✓</span>'}</div>` : ''; }).join('') + '</div>';
+    if (win) { confetti(['🏆', '👑', '🎉', '⭐', '🐉']); sfx('win'); }
+  } else {
+    st.chest = false;
+    stars = pct >= .85 ? 3 : pct >= .6 ? 2 : pct >= .35 ? 1 : 0; chest = stars > 0;
+    S.stars[st.w] = Math.max(S.stars[st.w] || 0, stars);
+    const msg = stars === 3 ? '¡Dominas esta isla!' : stars === 2 ? 'Muy buen trabajo. Un poco más y consigues las 3 estrellas.' : stars === 1 ? 'Vas bien. Repite la ronda: los retos cambian cada vez.' : 'Repasa la parte de "Aprende" y vuelve a intentarlo. ¡Tú puedes!';
+    head = `<div class="resav">${avatarSVG(profile, stars ? 'happy' : 'think')}</div><h1>${WBY[st.w].name}</h1><div class="bigst">${starStr(stars)}</div><div class="score">${s}/${n}</div><p>${s} a la primera${ok > s ? ` y ${ok - s} al segundo intento` : ''}. Ganaste <b>${st.gc} 🪙</b>. ${msg}</p>`;
+    if (stars === 3) { confetti(); sfx('win'); }
+  }
+  if (chest) st.chest = true;
+  save();
+  show('result');
+  $('#result').innerHTML = `<div class="res">${head}${chest ? `<div id="chestBox"><button class="chest" data-act="chest" aria-label="Abrir el cofre sorpresa">🎁</button><p><b>¡Ganaste un cofre! Tócalo para abrirlo.</b></p></div>` : ''}${body}${st.mode !== 'boss' && !stars ? `<button class="main alt" data-world="${st.w}">📖 Repasar la lección</button>` : ''}
+    <div class="resbtns"><button class="main alt" data-act="home">🗺️ Mapa</button><button class="main go" ${st.mode === 'boss' ? 'data-boss="1"' : `data-play="${st.w}"`}>Otra ronda</button></div></div>`;
+}
+function openChest(box) {
+  if (st) st.chest = false;
+  const s = newSticker(); sfx('chest'); confetti(s ? [s, '✨', '⭐'] : ['🪙']);
+  box.innerHTML = s ? `<div class="prize">${s}</div><p><b>¡Sticker nuevo para tu álbum!</b></p>` : `<div class="prize">🪙</div><p><b>Ya tienes todos los stickers. ¡Toma 10 monedas!</b></p>`;
+}
+function showAlbum(msg) {
+  show('album');
+  $('#album').innerHTML = `<div class="bar"><button class="back" data-act="home">← Mapa</button><h2>📒 Mi álbum</h2><span class="pill">🪙 ${S.coins}</span></div>
+    <p>${S.stickers.length} de ${STICKERS.length + 1} stickers. Ganas un cofre cada vez que consigues estrellas en una isla.</p>
+    <div class="album">${[...STICKERS, '👑'].map(s => `<div class="stk${S.stickers.includes(s) ? '' : ' no'}">${S.stickers.includes(s) ? s : '❓'}</div>`).join('')}</div>
+    <div id="chestBox" style="text-align:center">${msg || ''}</div>
+    <button class="main" data-act="buy">🎰 Cofre sorpresa · 30 🪙</button>
+    <h2 style="margin:26px 0 10px">🏅 Logros</h2>
+    <div class="logros">${LOGROS.map(([e, t, d, f]) => `<div class="logro${f() ? '' : ' no'}"><span>${f() ? e : '🔒'}</span><div><b>${t}</b><small>${d}</small></div></div>`).join('')}</div>`;
+}
+
+/* ---------- Entrada ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, .hit'); if (!t) return;
+  const d = t.dataset;
+  if (d.world) return showWorld(d.world);
+  if (d.play) return startWorld(d.play);
+  if (d.boss) return startBoss();
+  if (d.opt) { draft[d.opt] = d.val; renderSetup(); return; }
+  switch (d.act) {
+    case 'quit': if (t.dataset.armed) { delete t.dataset.armed; t.textContent = '✕ Salir'; return showHome(); } t.dataset.armed = '1'; t.textContent = '¿Salir? Toca otra vez'; setTimeout(() => { delete t.dataset.armed; t.textContent = '✕ Salir'; }, 3000); return;
+    case 'home': return showHome();
+    case 'setup': return showSetup();
+    case 'save': return saveProfile();
+    case 'random': draft = randomProfile($('#nameIn').value); renderSetup(); return;
+    case 'check': if (st) action(); return;
+    case 'album': return showAlbum();
+    case 'sound': S.sound = !S.sound; save(); showHome(); sfx('ok'); return;
+    case 'joke': $('#bubble').textContent = pick(JOKES); return;
+    case 'chest': return openChest($('#chestBox'));
+    case 'buy':
+      if (S.coins < 30) return showAlbum('<p><b>Te faltan monedas. Juega una isla para ganar más. 🪙</b></p>');
+      S.coins -= 30; save(); showAlbum(); return openChest($('#chestBox'));
+  }
+  if (!st || $('#play').classList.contains('hidden')) return;
+  const u = st.ui, q = cur();
+  if (d.key) typeKey(d.key);
+  else if (d.slot !== undefined) { u.active = +d.slot; render(); }
+  else if (d.nudge && u.placed !== null && !u.done) { u.placed = Math.max(0, Math.min(q.count, u.placed + +d.nudge)); render(); }
+  else if (d.act === 'hint') { u.hint = true; u.hinted = true; u.fb = typeof q.hint === 'function' ? q.hint(q, u) : q.hint; u.fbk = 'hint'; render(); }
+  else if (d.sign && !u.done) { u.pick = d.sign; if (d.sign !== q.ans) u.wrong.push(d.sign); judge(d.sign === q.ans); }
+  else if (d.optI !== undefined && !u.done) { const i = +d.optI; if (i !== q.ans) u.wrong.push(i); judge(i === q.ans); }
+  else if (d.chip !== undefined) { if (u.ord.length < q.items.length) u.ord.push(+d.chip); render(); }
+  else if (d.oslot !== undefined) { const i = +d.oslot; if (u.ord[i] !== undefined) { u.ord.splice(i, 1); render(); } }
+});
+document.addEventListener('pointerdown', e => {
+  const hit = e.target.closest('.hit'); if (!hit || !st) return;
+  const q = cur(); if (q.kind !== 'tap' || st.ui.done) return;
+  const r = hit.ownerSVGElement.getBoundingClientRect(), xv = (e.clientX - r.left) / r.width * 1000, dx = (1000 - 92) / q.count;
+  st.ui.placed = Math.max(0, Math.min(q.count, Math.round((xv - 46) / dx)));
+  render();
+});
+$('#mainBtn').addEventListener('click', action);
+document.addEventListener('keydown', e => {
+  if (!st || $('#play').classList.contains('hidden')) return;
+  const q = cur();
+  if (/^[0-9]$/.test(e.key)) typeKey(e.key);
+  else if (e.key === ',' || e.key === '.') typeKey(',');
+  else if (e.key === 'Backspace') typeKey('del');
+  else if (e.key === 'Tab' && q.kind === 'num' && q.slots.length > 1) { e.preventDefault(); typeKey('tab'); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (!$('#mainBtn').classList.contains('hidden')) action(); }
+});
+showHome();
+</script>
+</body>
+</html>

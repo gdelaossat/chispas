@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chispas</title>
+<style>
+:root{--bg:#d9f1f4;--ink:#14304a;--muted:#4f6a84;--card:#fff;--accent:#e2432a}
+@media (prefers-color-scheme: dark){:root{--bg:#0b1b2a;--ink:#eaf3f9;--muted:#9db4c8;--card:#172c41;--accent:#ff7d63}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,'Segoe UI',sans-serif;font-size:18px;line-height:1.45}
+main{max-width:720px;margin:0 auto;padding:32px 16px 48px}
+h1{font-size:clamp(30px,7vw,44px);line-height:1.05;margin:0 0 8px;color:var(--accent)}
+p{color:var(--muted);margin:0 0 24px}
+.list{display:grid;gap:14px}
+a.item{display:flex;gap:14px;align-items:center;background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:14px 16px;text-decoration:none;color:var(--ink);box-shadow:4px 4px 0 var(--ink)}
+a.item:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.em{font-size:44px;line-height:1}
+.item b{display:block;font-size:22px}
+.item span{color:var(--muted);font-size:16px}
+</style>
+</head>
+<body>
+<main>
+<h1>Chispas ✨</h1>
+<p>Juegos y repasos interactivos para estudiar en casa. Se abren en el navegador y funcionan en computador, tableta y teléfono.</p>
+<div class="list">
+<a class="item" href="aventura-mathe/"><span class="em">🏝️</span><span><b>Aventura Mathe</b><span>Matemáticas de 3.º: recta numérica, comparación, números vecinos, euros y céntimos, problemas y medidas. Con términos en español y alemán.</span></span></a>
+</div>
+</main>
+</body>
+</html>
