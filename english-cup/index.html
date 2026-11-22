@@ -143,6 +143,11 @@ button.pill{cursor:pointer}
 .prompt{font-size:22px;margin:0;font-weight:800}
 .es{font-size:15px;color:var(--muted);margin:2px 0 12px}
 .big{font-size:84px;line-height:1.1;text-align:center;margin:4px 0 12px}
+.pic{background:#fff;border-radius:14px;vertical-align:middle}
+.big .pic{width:170px;height:170px;padding:6px;border:2px solid var(--sheetline)}
+.opt.emoji .pic{width:92px;height:92px;display:block;margin:0 auto}
+.w .pic{width:44px;height:44px;border-radius:8px}
+.fb .pic{width:44px;height:44px;border-radius:8px}
 .bigword{font-family:var(--display);font-weight:800;font-size:44px;text-align:center;margin:4px 0 12px;color:var(--purple)}
 .sent{font-size:26px;font-weight:800;text-align:center;margin:6px 0 14px;line-height:1.35}
 .sent .gap{display:inline-block;min-width:70px;border-bottom:4px solid var(--red);color:var(--ok);text-align:center}
@@ -151,7 +156,7 @@ button.pill{cursor:pointer}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .opts.one{grid-template-columns:1fr}
 .opt{padding:12px 8px;border-radius:14px;border:3px solid var(--ink);background:var(--card);font-weight:800;font-size:22px;cursor:pointer;min-height:58px;box-shadow:0 4px 0 var(--ink)}
-.opt.emoji{font-size:44px;line-height:1.1}
+.opt.emoji{font-size:64px;line-height:1.1;min-height:108px}
 .opt:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 .opt[disabled]{cursor:default;box-shadow:none;opacity:.55}
 .opt.right{background:var(--ok);color:#fff;opacity:1;border-color:var(--ok)}
@@ -209,7 +214,7 @@ button.pill{cursor:pointer}
     <div class="mascot"><button class="masc" data-act="tip" aria-label="Monty: toca para otra frase">👾</button><div class="bubble" id="bubble"></div></div>
     <div class="map" id="map"></div>
     <div class="badges"><h2>🏅 Medallas</h2><div class="bgrid" id="badges"></div></div>
-    <footer class="foot">Desarrollado con ❤️ por el equipo de <a href="https://logru.co" target="_blank" rel="noopener">Logru.co</a></footer>
+    <footer class="foot"><small>Pictogramas: <a href="https://mulberrysymbols.org" target="_blank" rel="noopener">Mulberry Symbols</a> © Steve Lee, licencia CC BY-SA 4.0, y dibujos propios.</small><br>Desarrollado con ❤️ por el equipo de <a href="https://logru.co" target="_blank" rel="noopener">Logru.co</a></footer>
   </section>
 
   <section id="world" class="hidden"></section>
@@ -430,19 +435,30 @@ const avatarHTML = mood => hasAvatar() ? avatarSVG(profile, mood || '') : ((mine
    CONTENIDO: solo las palabras y frases de la guía de estudio
    ==================================================================== */
 const EMO = {
-  grandma: '👵', grandpa: '👴', mom: '👩', dad: '👨', baby: '👶', sister: '👧', brother: '👦',
-  boring: '🥱', asleep: '😴', fun: '🥳', lazy: '🦥', slow: '🐢', loud: '📢', quiet: '🤫', music: '🎵', sports: '🏅', 'go shopping': '🛍️',
-  chair: '🪑', computer: '💻', door: '🚪', mouse: '🖱️', wall: '🧱', window: '🪟', canteen: '🍽️', library: '📚',
-  point: '👉', read: '📖', say: '🗣️', write: '✍️', mistake: '❌',
-  ball: '⚽', monster: '👾', car: '🚗', train: '🚂', puzzle: '🧩', paper: '📄', scissors: '✂️', run: '🏃', race: '🏁', goal: '🥅'
+  grandma: '👵', grandpa: '👴', mom: '👩', dad: '👨', baby: '👶',
+  boring: '🥱', asleep: '😴', fun: '🥳', lazy: '🦥', slow: '🐢', loud: '📢', quiet: '🤫', music: '🎵', sports: '⚽🏀🎾', 'go shopping': '🛍️',
+  chair: '🪑', computer: '💻', door: '🚪', mouse: '🖱️', wall: '🧱', canteen: '🍽️', library: '📚',
+  point: '👉', write: '✍️', mistake: '❌', class: '👩‍🏫🧒👧',
+  monster: '👾', car: '🚗', train: '🚂', puzzle: '🧩', paper: '📄', scissors: '✂️', soccer: '⚽'
 };
+/* Pictogramas en img/: Mulberry Symbols (CC BY-SA) y algunos dibujados para este juego */
+const IMG = new Set(['sister', 'brother', 'aunt', 'uncle', 'cousin', 'grandparent', 'parent', 'busy', 'fast', 'awake', 'pick up',
+  'bookcase', 'classroom', 'board', 'desk', 'window', 'read', 'say', 'answer', 'ask', 'sit down', 'stand up', 'open', 'close', 'eraser', 'classmate',
+  'ball', 'puppet', 'new', 'old', 'pretty', 'ugly', 'glue', 'bounce', 'catch', 'hit', 'team', 'run', 'hop', 'jump', 'kick', 'race', 'throw', 'goal', 'points', 'rules']);
+const hasPic = w => IMG.has(w) || !!EMO[w];
+const pic = w => IMG.has(w) ? `<img class="pic" src="img/${w.replace(' ', '-')}.svg" alt="">` : EMO[w];
 /* Palabras que no deben aparecer juntas como opciones porque el dibujo podría servir para las dos */
 const AVOID = {
-  mom: ['parent', 'aunt', 'grandma'], dad: ['parent', 'uncle', 'grandpa'], grandma: ['grandparent', 'mom', 'aunt'], grandpa: ['grandparent', 'dad', 'uncle'],
-  sister: ['cousin', 'baby'], brother: ['cousin', 'baby'], baby: ['cousin', 'sister', 'brother'],
-  boring: ['lazy', 'asleep', 'quiet'], asleep: ['lazy', 'boring', 'quiet'], lazy: ['asleep', 'slow', 'boring'], slow: ['lazy'], loud: ['music', 'fun'], music: ['loud', 'fun'], fun: ['music', 'loud'], sports: ['fast', 'fun'], quiet: ['asleep', 'boring'],
-  library: ['bookcase', 'read'], read: ['library', 'bookcase', 'open'], door: ['open', 'close'], window: ['open', 'close'], say: ['ask', 'answer'], write: ['eraser', 'mistake'], mistake: ['eraser', 'close'], computer: ['desk'], chair: ['sit down', 'desk'], canteen: ['class'], point: ['ask'],
-  ball: ['soccer', 'bounce', 'kick', 'goal', 'throw', 'catch'], goal: ['soccer', 'points', 'kick'], run: ['race', 'team', 'jump', 'hop'], race: ['run', 'points', 'rules'], monster: ['ugly', 'puppet'], car: ['race', 'new', 'old'], train: ['old', 'new'], paper: ['rules', 'points'], scissors: ['glue'], puzzle: ['pretty']
+  mom: ['parent', 'aunt', 'grandma'], dad: ['parent', 'uncle', 'grandpa'], grandma: ['grandparent', 'aunt'], grandpa: ['grandparent', 'uncle'],
+  aunt: ['uncle', 'sister', 'parent', 'grandparent'], uncle: ['brother', 'parent', 'grandparent'], parent: ['grandparent'],
+  cousin: ['sister', 'brother', 'baby'], sister: ['baby'], brother: ['baby'],
+  boring: ['lazy', 'asleep', 'quiet'], asleep: ['lazy', 'quiet', 'awake'], lazy: ['slow', 'awake'], loud: ['music', 'fun'], music: ['fun'], sports: ['fast', 'fun'], busy: ['loud'],
+  library: ['bookcase', 'read'], read: ['bookcase', 'open'], door: ['open', 'close'], open: ['close'], say: ['ask', 'answer'], ask: ['answer', 'point'], answer: ['mistake'],
+  write: ['eraser', 'mistake', 'board'], eraser: ['mistake'], computer: ['desk'], chair: ['sit down', 'desk'], canteen: ['class'],
+  classroom: ['class', 'classmate', 'desk', 'board'], class: ['classmate'], classmate: ['desk', 'sit down'],
+  ball: ['soccer', 'bounce', 'kick', 'throw', 'catch'], soccer: ['kick', 'goal', 'team'], catch: ['throw'], throw: ['hit'], goal: ['points', 'kick'],
+  run: ['race', 'hop', 'jump', 'team'], hop: ['jump'], race: ['team', 'points'], points: ['rules'], rules: ['paper'],
+  monster: ['ugly', 'puppet'], car: ['race'], new: ['pretty'], old: ['ugly'], scissors: ['glue'], glue: ['paper']
 };
 const UNITS = {
   u1: { groups: [
@@ -481,17 +497,17 @@ function qListen(w, u) {
   return { type: 'mc', tag: '🎧 Listening', prompt: 'Listen. Which word is it?', es: 'Escucha y toca la palabra.', hear: w, auto: true, opts: [w, ...shuffle(wordsOf(u).filter(x => x !== w)).slice(0, 3)], ans: w, after: w };
 }
 function qE2W(w, u) {
-  return { type: 'mc', tag: '👀 Look', prompt: 'What is it?', es: 'Mira el dibujo y toca la palabra.', big: EMO[w], opts: [w, ...distract(w, wordsOf(u), 3)], ans: w, after: w };
+  return { type: 'mc', tag: '👀 Look', prompt: 'What is it?', es: 'Mira el dibujo y toca la palabra.', big: pic(w), opts: [w, ...distract(w, wordsOf(u), 3)], ans: w, after: w };
 }
 function qW2E(w, u) {
-  const pool = wordsOf(u).filter(x => EMO[x]);
-  return { type: 'mc', tag: '📖 Read', prompt: 'Read. Tap the picture.', es: 'Lee la palabra y toca el dibujo.', bigword: w, emoji: true, opts: [EMO[w], ...distract(w, pool, 3).map(x => EMO[x])], ans: EMO[w], after: w };
+  const pool = wordsOf(u).filter(hasPic);
+  return { type: 'mc', tag: '📖 Read', prompt: 'Read. Tap the picture.', es: 'Lee la palabra y toca el dibujo.', bigword: w, emoji: true, opts: [pic(w), ...distract(w, pool, 3).map(pic)], ans: pic(w), after: w };
 }
 function qSpell(w) {
   const letters = w.split('');
   let mix = letters.slice(); for (let i = 0; i < 12 && mix.join('') === w; i++) shuffle(mix);
   const q = { type: 'build', kind: 'spell', tag: '🔤 Spelling', prompt: 'Put the letters in order.', es: 'Ordena las letras para escribir la palabra.', pool: mix, built: [], target: letters, ans: w, after: w };
-  if (EMO[w]) q.big = EMO[w]; else if (canHear()) { q.hear = w; q.auto = true; q.prompt = 'Listen. Put the letters in order.'; q.es = 'Escucha la palabra y ordena las letras.'; }
+  if (hasPic(w)) q.big = pic(w); else if (canHear()) { q.hear = w; q.auto = true; q.prompt = 'Listen. Put the letters in order.'; q.es = 'Escucha la palabra y ordena las letras.'; }
   return q;
 }
 function qOdd(u) {
@@ -501,14 +517,14 @@ function qOdd(u) {
 }
 function vocabQ(w, u) {
   const types = [];
-  if (EMO[w]) types.push('e2w', 'w2e');
+  if (hasPic(w)) types.push('e2w', 'w2e');
   if (canHear()) types.push('listen');
   if (!w.includes(' ') && w.length <= 9) types.push('spell');
   const t = pick(types);
   return t === 'e2w' ? qE2W(w, u) : t === 'w2e' ? qW2E(w, u) : t === 'listen' ? qListen(w, u) : qSpell(w);
 }
 function vocabRound(u, n) {
-  const ws = shuffle(wordsOf(u).filter(w => EMO[w] || canHear() || !w.includes(' ')));
+  const ws = shuffle(wordsOf(u).filter(w => hasPic(w) || canHear() || !w.includes(' ')));
   const qs = ws.slice(0, n - 1).map(w => vocabQ(w, u));
   qs.splice(rnd(2, qs.length), 0, qOdd(u));
   if (u === 'u2' && Math.random() < .6) qs[rnd(0, qs.length - 1)] = { type: 'mc', tag: '👀 Look', prompt: 'Look at the picture. Where are the students?', es: 'Mira el dibujo. ¿Dónde están los estudiantes?', big: '💻🪑👩‍🏫', opts: ['in school', 'at home', 'on the playground'], ans: 'in school', one: true, after: 'in school' };
@@ -622,7 +638,7 @@ function orderQ(tag, s) {
 
 /* ---------- Estaciones ---------- */
 const many = (f, n) => () => { const out = [], seen = new Set(); let guard = 0; while (out.length < n && guard++ < 200) { const q = f(); const k = q.prompt + '|' + (q.sent || q.bigword || q.ans); if (seen.has(k)) continue; seen.add(k); out.push(q); } return out; };
-const chips = ws => `<div class="voc">${ws.map(w => `<button class="w" data-say="${w}">${EMO[w] ? EMO[w] + ' ' : ''}${w}</button>`).join('')}</div>`;
+const chips = ws => `<div class="voc">${ws.map(w => `<button class="w" data-say="${w}">${hasPic(w) ? pic(w) + ' ' : ''}${w}</button>`).join('')}</div>`;
 const unitLearn = u => UNITS[u].groups.map(g => `<h3>${g[0]}</h3>${chips(g[1])}`).join('');
 const line = (a, b) => `<button data-say="${(a + ' ' + (b || '')).replace(/<[^>]+>/g, '').replace(/ \/ /g, '. ')}">${a}${b ? ' &nbsp;→&nbsp; ' + b : ''}</button>`;
 const WORLDS = [
@@ -641,7 +657,7 @@ const WORLDS = [
 ];
 const WBY = Object.fromEntries(WORLDS.map(w => [w.id, w]));
 function bossRound() {
-  const v = ['u1', 'u1', 'u2', 'u2', 'u3', 'u3'].map(u => { const ws = shuffle(wordsOf(u).filter(w => EMO[w] || canHear() || !w.includes(' '))); return vocabQ(ws[0], u); });
+  const v = ['u1', 'u1', 'u2', 'u2', 'u3', 'u3'].map(u => { const ws = shuffle(wordsOf(u).filter(w => hasPic(w) || canHear() || !w.includes(' '))); return vocabQ(ws[0], u); });
   return shuffle([...v, ...many(qCan, 3)(), ...many(qHW, 2)(), ...many(qDem, 3)(), qRhyme()]);
 }
 const BOSS_N = 15, BOSS_WIN = 11;

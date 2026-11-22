@@ -17,3 +17,7 @@ Juegos y repasos interactivos en HTML para estudiar en casa. Cada material es un
 2. Agrega una tarjeta en `index.html` de la raíz y una fila en la tabla de arriba.
 
 El progreso y el avatar de cada juego se guardan solo en el navegador de quien juega.
+
+## Créditos de imágenes
+
+English Cup usa pictogramas de [Mulberry Symbols](https://mulberrysymbols.org) (© Steve Lee, licencia [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)), en `english-cup/img/`. Los archivos `cousin`, `answer`, `eraser`, `classmate`, `new`, `team`, `throw`, `points` y `rules` son dibujos propios hechos para el juego y se comparten bajo la misma licencia.
