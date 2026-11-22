@@ -20,6 +20,6 @@ El progreso y el avatar de cada juego se guardan solo en el navegador de quien j
 
 ## Créditos de imágenes
 
-English Quest usa pictogramas de [Mulberry Symbols](https://mulberrysymbols.org) (© Steve Lee, licencia [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)), en `english-quest/img/`. Los archivos `cousin`, `answer`, `eraser`, `classmate`, `new`, `team`, `throw`, `points` y `rules` son dibujos propios hechos para el juego y se comparten bajo la misma licencia.
+English Quest usa pictogramas de [Mulberry Symbols](https://mulberrysymbols.org) (© Steve Lee, licencia [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)), en `english-quest/img/`. Los archivos `answer`, `eraser`, `classmate`, `new`, `team`, `throw`, `points` y `rules` son dibujos propios hechos para el juego y se comparten bajo la misma licencia.
 
 Las fotos reales de English Quest se cargan desde [Wikimedia Commons](https://commons.wikimedia.org) con licencias libres; el autor y la licencia de cada una están en la sección «Créditos de las imágenes» dentro del juego. Si una foto no carga, el juego muestra el pictograma o el emoji de esa palabra.

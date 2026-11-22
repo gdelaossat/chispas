@@ -156,6 +156,20 @@ button.pill{cursor:pointer}
 .opt.pw{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:19px;padding:8px 6px}
 .opt.pw .pe{font-size:40px;line-height:1.1;min-height:60px;display:grid;place-items:center}
 .opt.pw .pic{width:60px;height:60px;border-radius:10px}
+.tree{display:block;width:100%;max-width:400px;margin:0 auto 12px;background:var(--card);border:2px solid var(--sheetline);border-radius:14px}
+.tree line{stroke:var(--muted);stroke-width:3;stroke-linecap:round}
+.tree .fn circle{fill:#fff;stroke:#14304a;stroke-width:2.5}
+.tree .fn text.e{font-size:30px}
+.tree .fn text.l{font:800 13px var(--body);fill:var(--ink)}
+.tree .fn.me circle{fill:#ffe98a}
+.tree.word .fn{opacity:.45}
+.tree.word .fn.me{opacity:1}
+.tree.word .fn.hi{opacity:1}
+.tree .fn.hi circle{stroke:var(--red);stroke-width:7;fill:#ffd9d2;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{stroke-width:11}}
+.tree.tap .fn,.tree.study .fn{cursor:pointer}
+.tree .fn.ok circle{stroke:var(--ok);stroke-width:8;fill:#c9f2d8}
+.tree .fn.no circle{stroke:var(--bad);stroke-width:8;fill:#ffd9d2}
 .pairs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pairs .col{display:grid;gap:10px}
 .mb{border-radius:14px;border:3px solid var(--ink);background:var(--card);font-weight:800;font-size:21px;cursor:pointer;height:86px;box-shadow:0 4px 0 var(--ink);padding:4px;line-height:1.1}
@@ -455,14 +469,14 @@ const avatarHTML = mood => hasAvatar() ? avatarSVG(profile, mood || '') : ((mine
    CONTENIDO: solo las palabras y frases de la guía de estudio
    ==================================================================== */
 const EMO = {
-  grandma: '👵', grandpa: '👴', mom: '👩', dad: '👨', baby: '👶',
+  grandma: '👵', grandpa: '👴', baby: '👶',
   boring: '🥱', asleep: '😴', fun: '🥳', lazy: '🦥', slow: '🐢', loud: '📢', quiet: '🤫', music: '🎵', sports: '⚽🏀🎾', 'go shopping': '🛍️',
   chair: '🪑', computer: '💻', door: '🚪', mouse: '🖱️', wall: '🧱', canteen: '🍽️', library: '📚',
   point: '👉', write: '✍️', mistake: '❌', class: '👩‍🏫🧒👧',
   monster: '👾', car: '🚗', train: '🚂', puzzle: '🧩', paper: '📄', scissors: '✂️', soccer: '⚽'
 };
 /* Pictogramas en img/: Mulberry Symbols (CC BY-SA) y algunos dibujados para este juego */
-const IMG = new Set(['sister', 'brother', 'aunt', 'uncle', 'cousin', 'grandparent', 'parent', 'busy', 'fast', 'awake', 'pick up',
+const IMG = new Set(['busy', 'fast', 'awake', 'pick up',
   'bookcase', 'classroom', 'board', 'desk', 'window', 'read', 'say', 'answer', 'ask', 'sit down', 'stand up', 'open', 'close', 'eraser', 'classmate',
   'ball', 'puppet', 'new', 'old', 'pretty', 'ugly', 'glue', 'bounce', 'catch', 'hit', 'team', 'run', 'hop', 'jump', 'kick', 'race', 'throw', 'goal', 'points', 'rules']);
 /* Fotos reales de Wikimedia Commons (licencias libres). Si una no carga, se usa el pictograma o el emoji. */
@@ -535,6 +549,33 @@ const sentWith = (s, g) => s.replace('? ', '?<br>').replace(/___(\S*)/, (m, p) =
 const sentHTML = s => sentWith(s, gap);
 const distract = (w, pool, n) => shuffle(pool.filter(x => x !== w && !(AVOID[w] || []).includes(x) && !(AVOID[x] || []).includes(w))).slice(0, n);
 
+/* ----- Árbol de la familia: el niño es "me" y cada pariente ocupa su lugar ----- */
+const FAM = { grandma: [150, 42, '👵'], grandpa: [210, 42, '👴'], aunt: [45, 138, '👩‍🦰'], uncle: [105, 138, '👨‍🦰'], mom: [230, 138, '👩'], dad: [290, 138, '👨'],
+  cousin: [75, 238, '🧒'], sister: [185, 238, '👧'], me: [235, 238, '🙋'], brother: [285, 238, '👦'], baby: [335, 238, '👶'] };
+const FAMSET = { grandparent: ['grandma', 'grandpa'], parent: ['mom', 'dad'] };
+const FAMW = ['grandma', 'grandpa', 'mom', 'dad', 'baby', 'sister', 'brother', 'aunt', 'uncle', 'cousin', 'grandparent', 'parent'];
+const FAMES = { grandma: 'abuela', grandpa: 'abuelo', mom: 'mamá', dad: 'papá', baby: 'bebé', sister: 'hermana', brother: 'hermano', aunt: 'tía', uncle: 'tío', cousin: 'primo o prima', grandparent: 'abuelo o abuela', parent: 'mamá o papá' };
+const famTargets = w => FAMSET[w] || [w];
+function famTree(mode, hi) {
+  const L = [[150, 42, 210, 42], [180, 42, 180, 90], [75, 90, 260, 90], [75, 90, 75, 138], [260, 90, 260, 138], [45, 138, 105, 138], [230, 138, 290, 138],
+    [75, 138, 75, 238], [260, 138, 260, 190], [185, 190, 335, 190], [185, 190, 185, 238], [235, 190, 235, 238], [285, 190, 285, 238], [335, 190, 335, 238]];
+  const nodes = Object.entries(FAM).map(([k, [x, y, e]]) => {
+    const label = k === 'me' || mode === 'study' ? `<text class="l" x="${x}" y="${y + 43}" text-anchor="middle">${k}</text>` : '';
+    const attr = mode === 'study' ? (k === 'me' ? '' : ` data-say="${k}"`) : ` data-fam="${k}"`;
+    return `<g class="fn${k === 'me' ? ' me' : ''}${(hi || []).includes(k) ? ' hi' : ''}"${attr}><circle cx="${x}" cy="${y}" r="25"/><text class="e" x="${x}" y="${y + 1}" text-anchor="middle" dominant-baseline="central">${e}</text>${label}</g>`;
+  }).join('');
+  return `<svg class="tree ${mode}" viewBox="0 0 380 292" role="img" aria-label="family tree">${L.map(([a, b, c, d]) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`).join('')}${nodes}</svg>`;
+}
+function qTreeWord(w) {
+  const t = famTargets(w);
+  const pool = FAMW.filter(x => x !== w && !t.includes(x) && !famTargets(x).some(y => t.includes(y)));
+  return { type: 'mc', tag: '👪 Family tree', prompt: 'Look at the family. Who is it?', es: 'Tú eres “me”. ¿Quién es la persona marcada en rojo?', tree: famTree('word', t), opts: [w, ...shuffle(pool).slice(0, 3)], ans: w, after: w, note: `${w} = ${FAMES[w]}` };
+}
+function qTreeTap(w) {
+  const who = w === 'baby' ? 'the baby' : FAMSET[w] ? 'a ' + w : 'my ' + w;
+  return { type: 'tap', tag: '👪 Family tree', prompt: `Tap ${who}.`, es: 'Tú eres “me”. Toca a esa persona en el árbol de la familia.', tree: famTree('tap'), targets: famTargets(w), hear: w, ans: w, after: w, note: `${w} = ${FAMES[w]}` };
+}
+
 /* ----- Vocabulario ----- */
 function qListen(w, u) {
   return { type: 'mc', tag: '🎧 Listening', prompt: 'Listen. Which word is it?', es: 'Escucha y toca la palabra.', hear: w, auto: true, opts: [w, ...shuffle(wordsOf(u).filter(x => x !== w)).slice(0, 3)], ans: w, after: w };
@@ -571,14 +612,15 @@ function qOdd(u) {
 }
 function vocabQ(w, u) {
   const types = [];
+  if (FAMW.includes(w)) types.push('tree', 'tree', 'tap', 'tap', 'tap');
   if (hasPic(w)) types.push('e2w', 'e2w', 'w2e', 'w2e');
-  if (canHear()) types.push('listen', 'l2e', 'l2e');
+  if (canHear()) { types.push('listen'); if (hasPic(w)) types.push('l2e', 'l2e'); }
   if (!w.includes(' ') && w.length <= 9) types.push('spell');
   const t = pick(types);
-  return t === 'e2w' ? qE2W(w, u) : t === 'w2e' ? qW2E(w, u) : t === 'l2e' ? qL2E(w, u) : t === 'listen' ? qListen(w, u) : qSpell(w);
+  return t === 'tree' ? qTreeWord(w) : t === 'tap' ? qTreeTap(w) : t === 'e2w' ? qE2W(w, u) : t === 'w2e' ? qW2E(w, u) : t === 'l2e' ? qL2E(w, u) : t === 'listen' ? qListen(w, u) : qSpell(w);
 }
 function vocabRound(u, n) {
-  const ws = shuffle(wordsOf(u).filter(w => hasPic(w) || canHear() || !w.includes(' ')));
+  const ws = shuffle(wordsOf(u).filter(w => hasPic(w) || FAMW.includes(w) || canHear() || !w.includes(' ')));
   const qs = ws.slice(0, n - 3).map(w => vocabQ(w, u));
   qs.splice(rnd(1, 3), 0, qMatch(u));
   qs.splice(rnd(5, qs.length), 0, qMatch(u));
@@ -712,7 +754,7 @@ const chips = ws => `<div class="voc">${ws.map(w => `<button class="w" data-say=
 const unitLearn = u => UNITS[u].groups.map(g => `<h3>${g[0]}</h3>${chips(g[1])}`).join('');
 const line = (a, b) => `<button data-say="${(a + ' ' + (b || '')).replace(/<[^>]+>/g, '').replace(/ \/ /g, '. ')}">${a}${b ? ' &nbsp;→&nbsp; ' + b : ''}</button>`;
 const WORLDS = [
-  { id: 'u1', e: '👨‍👩‍👧', c: '#e2432a', name: 'My Family', sub: 'Unit 1 · familia y cómo somos', round: () => vocabRound('u1', 10), learn: () => unitLearn('u1') },
+  { id: 'u1', e: '👨‍👩‍👧', c: '#e2432a', name: 'My Family', sub: 'Unit 1 · familia y cómo somos', round: () => vocabRound('u1', 10), learn: () => `<h3>My family tree</h3><p class="tip">Tú eres “me”. Toca a cada persona para oír quién es.</p>${famTree('study')}` + unitLearn('u1') },
   { id: 'u2', e: '🏫', c: '#0b7f8a', name: 'Our Classroom', sub: 'Unit 2 · el salón y cómo aprendo', round: () => vocabRound('u2', 10), learn: () => unitLearn('u2') },
   { id: 'u3', e: '🧩', c: '#7a4fd0', name: 'Toys & Teams', sub: 'Unit 3 · juguetes y equipos', round: () => vocabRound('u3', 10), learn: () => unitLearn('u3') },
   { id: 'can', e: '💪', c: '#17864a', name: 'Can / Can’t', sub: 'Grammar · lo que puedo y no puedo', round: many(qCan, 10),
@@ -727,7 +769,7 @@ const WORLDS = [
 ];
 const WBY = Object.fromEntries(WORLDS.map(w => [w.id, w]));
 function bossRound() {
-  const v = ['u1', 'u2', 'u3', pick(['u1', 'u2', 'u3'])].map(u => { const ws = shuffle(wordsOf(u).filter(w => hasPic(w) || canHear() || !w.includes(' '))); return vocabQ(ws[0], u); });
+  const v = ['u1', 'u2', 'u3', pick(['u1', 'u2', 'u3'])].map(u => { const ws = shuffle(wordsOf(u).filter(w => hasPic(w) || FAMW.includes(w) || canHear() || !w.includes(' '))); return vocabQ(ws[0], u); });
   return shuffle([...v, qMatch(pick(['u1', 'u2'])), qMatch('u3'), ...many(qCan, 3)(), ...many(qHW, 2)(), ...many(qDem, 3)(), qRhyme()]);
 }
 const BOSS_N = 15, BOSS_WIN = 11;
@@ -797,12 +839,15 @@ function render() {
   let h = `<span class="tag" style="--c:${w ? w.c : 'var(--red)'}">${q.retry ? '🔁 Otra vez' : q.tag}</span><p class="prompt">${q.prompt}</p><p class="es">${q.es || ''}</p>`;
   if (q.hear && canHear()) h += `<button class="hear" data-act="hear" aria-label="Escuchar">🔊</button>`;
   if (q.scene) h += q.scene;
+  if (q.tree) h += q.tree;
   if (q.big) h += `<div class="big">${q.big}</div>`;
   if (q.bigword && !(q.hear && q.auto)) h += `<div class="bigword">${q.bigword}</div>`;
   if (q.sent) h += `<div class="sent" id="sent">${sentHTML(q.sent)}</div>`;
   if (q.type === 'mc') {
     if (!q.shown) q.shown = q.fixed ? q.opts : shuffle(q.opts.slice());
     h += `<div class="opts${q.one ? ' one' : ''}">${q.shown.map((o, k) => `<button class="opt${q.emoji ? ' emoji' : ''}${q.render ? ' pw' : ''}" data-opt="${k}">${q.render ? q.render(o) : o}</button>`).join('')}</div>`;
+  } else if (q.type === 'tap') {
+    h += '';
   } else if (q.type === 'match') {
     q.matched = []; q.sel = null; q.errors = 0;
     h += `<div class="pairs"><div class="col">${q.left.map(w => `<button class="mb p" data-side="p" data-w="${w}">${pic(w)}</button>`).join('')}</div><div class="col">${q.right.map(w => `<button class="mb" data-side="w" data-w="${w}">${w}</button>`).join('')}</div></div>`;
@@ -837,14 +882,14 @@ function judge(ok, q) {
   const fb = $('#fb');
   if (ok) {
     fb.className = 'fb ok';
-    fb.innerHTML = `${pick(PRAISE)} ${q.retry ? '' : '+' + (10 + (R.combo >= 3 ? 5 : 0))}${R.combo >= 3 && !q.retry ? ` 🔥 x${R.combo}` : ''}`;
+    fb.innerHTML = `${pick(PRAISE)} ${q.retry ? '' : '+' + (10 + (R.combo >= 3 ? 5 : 0))}${R.combo >= 3 && !q.retry ? ` 🔥 x${R.combo}` : ''}${q.note ? `<small>${q.note}</small>` : ''}`;
     if (q.sent) $('#sent').innerHTML = sentWith(q.sent, `<span class="gap">${q.ans}</span>`);
     if (q.after) speak(q.after);
     const wait = canHear() ? 1100 + Math.min(1800, (q.after || '').length * 55) : 1000;
     setTimeout(() => { if (R && curQ() === q) next(); }, wait);
   } else {
     fb.className = 'fb bad';
-    fb.innerHTML = q.type === 'match' ? `All matched, with ${q.errors} mistake${q.errors > 1 ? 's' : ''}.<small>Volverá a salir al final de la ronda.</small>` : `Not yet. <small>✔ ${q.type === 'mc' && q.sent ? fill(q.sent, `<u>${q.ans}</u>`) : q.emoji ? q.ans + ' ' + q.after : q.ans}</small>`;
+    fb.innerHTML = q.type === 'match' ? `All matched, with ${q.errors} mistake${q.errors > 1 ? 's' : ''}.<small>Volverá a salir al final de la ronda.</small>` : `Not yet. <small>✔ ${q.type === 'mc' && q.sent ? fill(q.sent, `<u>${q.ans}</u>`) : q.emoji ? q.ans + ' ' + q.after : q.note || q.ans}</small>`;
     if (q.sent) $('#sent').innerHTML = sentWith(q.sent, `<span class="gap">${q.ans}</span>`);
     if (q.after) speak(q.after);
     $('#nextBtn').classList.remove('hidden');
@@ -887,10 +932,15 @@ function finish() {
 
 /* ---------- Eventos ---------- */
 document.addEventListener('click', ev => {
-  const t = ev.target.closest('[data-side],[data-act],[data-world],[data-start],[data-opt],[data-build],[data-unbuild],[data-say],[data-light],[data-emo]');
+  const t = ev.target.closest('[data-fam],[data-side],[data-act],[data-world],[data-start],[data-opt],[data-build],[data-unbuild],[data-say],[data-light],[data-emo]');
   if (!t) return;
   const d = t.dataset;
   if (d.say) return speak(d.say);
+  if (d.fam) {
+    const q = curQ(); if (!q || q.type !== 'tap' || q.done || d.fam === 'me') return;
+    document.querySelectorAll('#qarea .fn').forEach(g => { if (q.targets.includes(g.dataset.fam)) g.classList.add('ok'); else if (g === t) g.classList.add('no'); });
+    return judge(q.targets.includes(d.fam), q);
+  }
   if (d.side) {
     const q = curQ(); if (!q || q.done) return;
     if (t.classList.contains('right')) return;
