@@ -145,6 +145,12 @@ button.pill{cursor:pointer}
 .es{font-size:15px;color:var(--muted);margin:2px 0 12px}
 .big{font-size:84px;line-height:1.1;text-align:center;margin:4px 0 12px}
 .pic{background:#fff;border-radius:14px;vertical-align:middle}
+.pic.ph{object-fit:cover}
+.big .pic.ph{padding:0}
+.credits{margin-top:14px;background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:10px 14px;font-size:14px}
+.credits summary{cursor:pointer;font-weight:800;font-size:16px}
+.credits li{margin:4px 0}
+.credits a{color:var(--teal);font-weight:700}
 .big .pic{width:170px;height:170px;padding:6px;border:2px solid var(--sheetline)}
 
 .opt.pw{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:19px;padding:8px 6px}
@@ -227,7 +233,8 @@ button.pill{cursor:pointer}
     <div class="mascot"><button class="masc" data-act="tip" aria-label="Monty: toca para otra frase">👾</button><div class="bubble" id="bubble"></div></div>
     <div class="map" id="map"></div>
     <div class="badges"><h2>🏅 Medallas</h2><div class="bgrid" id="badges"></div></div>
-    <footer class="foot"><small>Pictogramas: <a href="https://mulberrysymbols.org" target="_blank" rel="noopener">Mulberry Symbols</a> © Steve Lee, licencia CC BY-SA 4.0, y dibujos propios.</small><br>Desarrollado con ❤️ por el equipo de <a href="https://logru.co" target="_blank" rel="noopener">Logru.co</a></footer>
+    <details class="credits"><summary>📷 Créditos de las imágenes</summary><p>Fotos de <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>:</p><ul id="photoCredits"></ul><p>Pictogramas: <a href="https://mulberrysymbols.org" target="_blank" rel="noopener">Mulberry Symbols</a> © Steve Lee, CC BY-SA 4.0, y dibujos propios.</p></details>
+    <footer class="foot">Desarrollado con ❤️ por el equipo de <a href="https://logru.co" target="_blank" rel="noopener">Logru.co</a></footer>
   </section>
 
   <section id="world" class="hidden"></section>
@@ -458,8 +465,31 @@ const EMO = {
 const IMG = new Set(['sister', 'brother', 'aunt', 'uncle', 'cousin', 'grandparent', 'parent', 'busy', 'fast', 'awake', 'pick up',
   'bookcase', 'classroom', 'board', 'desk', 'window', 'read', 'say', 'answer', 'ask', 'sit down', 'stand up', 'open', 'close', 'eraser', 'classmate',
   'ball', 'puppet', 'new', 'old', 'pretty', 'ugly', 'glue', 'bounce', 'catch', 'hit', 'team', 'run', 'hop', 'jump', 'kick', 'race', 'throw', 'goal', 'points', 'rules']);
-const hasPic = w => IMG.has(w) || !!EMO[w];
-const pic = w => IMG.has(w) ? `<img class="pic" src="img/${w.replace(' ', '-')}.svg" alt="">` : EMO[w];
+/* Fotos reales de Wikimedia Commons (licencias libres). Si una no carga, se usa el pictograma o el emoji. */
+const PHOTO = {
+  chair: ['Set of fourteen side chairs MET DP110780.jpg', 'Thomas Chippendale / The Met', 'CC0'],
+  mouse: ['3-Tasten-Maus Microsoft.jpg', 'Darkone', 'CC BY-SA 2.5'],
+  wall: ["King's Cross Central development Coal Drops Yard wall, London, England.jpg", 'Acabashi', 'CC BY-SA 4.0'],
+  classroom: ['Elementary classroom in Alaska.jpg', 'Liz (Flickr)', 'CC BY 2.0'],
+  eraser: ['Office-pink-erasers.jpg', 'Evan-Amos', 'dominio público'],
+  ball: ['BeachBall.jpg', 'Norvy', 'uso libre'],
+  car: ['Toy car (AM 1996.165.95).jpg', 'Auckland Museum · Fun Ho! Toy Company', 'CC BY 4.0'],
+  train: ['Distler-Zug, um 1950 (Foto Sp b).JPG', 'Lothar Spurzem', 'CC BY-SA 2.0 de'],
+  puzzle: ['Jigsaw puzzle 01 by Scouten.jpg', 'Scouten', 'CC BY-SA 3.0'],
+  puppet: ['Finger puppets.jpg', 'Diablanco', 'CC BY-SA 3.0'],
+  glue: ['Pritt Sticks.JPG', 'Elarkon', 'CC BY-SA 3.0'],
+  paper: ['Cahier Atoma ouvert.jpg', 'Ibu', 'CC BY-SA 4.0'],
+  scissors: ['Standard household scissors.jpg', 'Doggerelblogger', 'CC BY-SA 4.0']
+};
+const commons = f => 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f.replace(/ /g, '_'));
+const local = w => `img/${w.replace(' ', '-')}.svg`;
+const hasPic = w => !!PHOTO[w] || IMG.has(w) || !!EMO[w];
+const pic = w => PHOTO[w] ? `<img class="pic ph" data-w="${w}" src="${commons(PHOTO[w][0])}?width=400" alt="" onerror="picFail(this)">`
+  : IMG.has(w) ? `<img class="pic" src="${local(w)}" alt="">` : EMO[w];
+function picFail(el) {
+  const w = el.dataset.w; el.onerror = null;
+  if (IMG.has(w)) { el.classList.remove('ph'); el.src = local(w); } else el.replaceWith(EMO[w]);
+}
 /* Palabras que no deben aparecer juntas como opciones porque el dibujo podría servir para las dos */
 const AVOID = {
   mom: ['parent', 'aunt', 'grandma'], dad: ['parent', 'uncle', 'grandpa'], grandma: ['grandparent', 'aunt'], grandpa: ['grandparent', 'uncle'],
@@ -735,6 +765,7 @@ function showHome() {
   setTip();
   $('#map').innerHTML = WORLDS.map(w => `<button class="stn" style="--c:${w.c}" data-world="${w.id}">${S.lights[w.id] ? `<span class="light">${LIGHT[S.lights[w.id]]}</span>` : ''}<span class="blob">${w.e}</span><b>${w.name}</b><small>${w.sub}</small><span class="st">${starStr(S.stars[w.id] || 0)}</span></button>`).join('')
     + `<button class="stn boss" data-act="boss"><span class="blob">${S.cup ? '🏆' : '👾'}</span><span><b>Final Challenge</b><br><small>${BOSS_N} preguntas de todo el examen. Acierta ${BOSS_WIN} y gana el trofeo.${S.bossBest ? ` Tu récord: ${S.bossBest}.` : ''}</small></span></button>`;
+  $('#photoCredits').innerHTML = Object.entries(PHOTO).map(([w, [f, a, l]]) => `<li><b>${w}</b>: <a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(f.replace(/ /g, '_'))}" target="_blank" rel="noopener">${esc(f)}</a>, ${esc(a)}, ${l}.</li>`).join('');
   const got = earned();
   $('#badges').innerHTML = BADGES.map(b => `<div class="bdg${got.includes(b[1]) ? ' on' : ''}"><span>${b[0]}</span>${b[1]}</div>`).join('');
 }
