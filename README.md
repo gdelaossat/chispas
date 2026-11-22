@@ -9,6 +9,7 @@ Juegos y repasos interactivos en HTML para estudiar en casa. Cada material es un
 | Material | Tema | Enlace |
 |---|---|---|
 | 🏝️ Aventura Mathe | Matemáticas de 3.º (español y alemán): recta numérica hasta 1000, comparación, números vecinos, euros y céntimos, problemas y medidas | [Abrir](https://gdelaossat.github.io/chispas/aventura-mathe/) |
+| ⚽ English Cup | Inglés de 3.º: vocabulario (familia, colegio, juegos), can / can't, have / want con do / does, this-that-these-those y rimas | [Abrir](https://gdelaossat.github.io/chispas/english-cup/) |
 
 ## Cómo agregar un material
 
