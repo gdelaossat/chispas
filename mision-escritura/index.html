@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Misión Escritura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Idea: un cuaderno cuadriculado de colegio. Hojas blancas con margen rojo, tinta azul, resaltador amarillo. */
+:root{
+  color-scheme: light;
+  --grid:#dfeaf7; --desk:#eef4fb; --sheet:#ffffff; --ink:#1b2a5c; --soft:#5a6790;
+  --margin:#ef5d6c; --hi:#ffe45c; --ok:#1e9e6a; --okbg:#dff6ea; --bad:#d8394a; --badbg:#fde4e6;
+  --screen:#2f6bff; --paper:#f08a1c;
+  --display:"Baloo 2","Trebuchet MS",sans-serif; --body:"Nunito","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--body);color:var(--ink);font-size:18px;line-height:1.45;
+  background:var(--desk);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;min-height:100vh}
+#app{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.2rem,7vw,3.4rem);font-weight:800}
+h1 mark{background:var(--hi);color:inherit;padding:0 .15em;border-radius:6px}
+h2{font-size:1.7rem}
+h3{font-size:1.25rem}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hero{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.hero p{color:var(--soft);max-width:34em;margin-top:6px}
+.hero .hello{font-family:var(--display);font-size:1.3rem;color:var(--ink);margin:0}
+.avwrap{width:84px;height:84px;border-radius:50%;overflow:hidden;flex:none;display:block;border:3px solid var(--ink);background:#fff}
+.avwrap.big{width:110px;height:110px;margin:6px 0}
+.avwrap.emo{display:grid;place-items:center;font-size:44px;line-height:1}
+.av{width:100%;height:100%;display:block}
+.score{background:var(--ink);color:#fff;border-radius:16px;padding:10px 18px;font-family:var(--display);font-size:1.4rem;white-space:nowrap}
+.score small{display:block;font-family:var(--body);font-size:.8rem;opacity:.85}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:22px}
+.plan div{background:var(--hi);border-radius:12px;padding:10px 14px;font-size:.95rem}
+.plan b{font-family:var(--display);font-size:1.1rem;display:block}
+.sheet{background:var(--sheet);border-radius:14px;border-left:6px solid var(--margin);
+  box-shadow:0 3px 0 #c9d6ea,0 10px 24px rgba(27,42,92,.08);padding:20px 20px 22px 22px}
+.stations{display:grid;gap:14px}
+.st{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:start}
+.num{width:56px;height:56px;border-radius:50%;background:var(--c);color:#fff;font-family:var(--display);font-size:1.8rem;display:grid;place-items:center}
+.st p{color:var(--soft);font-size:.98rem;margin:4px 0 12px}
+.go{display:flex;flex-wrap:wrap;gap:10px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:800;background:var(--ink);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.btn.screen{background:var(--screen)} .btn.paper{background:var(--paper)}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--ink);box-shadow:none}
+.btn .s{margin-left:8px;letter-spacing:2px}
+.btn:disabled{opacity:.45;cursor:default}
+.final{border-left-color:var(--ink);background:var(--ink);color:#fff}
+.final p{color:#d5dcf5}
+.final .num{background:var(--hi);color:var(--ink)}
+.final .btn{background:var(--hi);color:var(--ink)}
+.top{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.pill{border-radius:99px;padding:4px 14px;font-weight:800;color:#fff;font-size:.9rem}
+.pill.screen{background:var(--screen)} .pill.paper{background:var(--paper)} .pill.theme{background:var(--hi);color:var(--ink)}
+.themes{margin-bottom:14px;border-left-color:var(--hi)}
+.chip.th{font-size:1rem}
+.prog{margin-left:auto;font-weight:800;color:var(--soft);font-variant-numeric:tabular-nums}
+.rule{background:var(--hi);border-radius:10px;padding:8px 12px;margin:10px 0 16px;font-size:.98rem}
+.q{font-weight:800;margin:6px 0 14px}
+.scene{font-size:4.5rem;text-align:center;line-height:1.1;margin:4px 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.chip{background:#fff;border:2px solid #b9c6e4;border-radius:10px;padding:8px 12px;font-size:1.2rem;font-weight:700}
+.chip.sel{background:var(--hi);border-color:var(--ink)}
+.chip.right{background:var(--okbg);border-color:var(--ok);color:#0d5e3d}
+.chip.wrong{background:var(--badbg);border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.word{font-size:1.25rem;font-weight:700}
+.slot{width:34px;height:40px;border:2px dashed #9fb0d8;border-radius:8px;background:#fff;font-size:1.5rem;font-weight:800;line-height:1;padding:0}
+.slot.on{border-style:solid;border-color:var(--ink);background:var(--hi)}
+.slot.right{border-style:solid;border-color:var(--ok);background:var(--okbg)}
+.slot.wrong{border-style:solid;border-color:var(--bad);background:var(--badbg)}
+.blank{font-size:1.35rem;font-weight:700;margin-bottom:14px}
+.blank u{text-decoration:none;border-bottom:3px solid var(--ink);padding:0 22px;margin:0 4px}
+.blank u.fill{padding:0 6px;color:var(--ok)}
+.lines{display:grid;gap:8px;margin-bottom:10px}
+.line{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center;text-align:left;background:#fff;border:2px solid #b9c6e4;border-radius:10px;padding:10px 12px;font-weight:700}
+.line i{font-style:normal;width:34px;height:34px;border-radius:50%;border:2px dashed #9fb0d8;display:grid;place-items:center;font-family:var(--display)}
+.line.sel i{background:var(--hi);border:2px solid var(--ink)}
+.line.right{border-color:var(--ok);background:var(--okbg)}
+.fb{border-radius:10px;padding:10px 14px;margin:10px 0;font-weight:700}
+.fb.good{background:var(--okbg);color:#0d5e3d} .fb.bad{background:var(--badbg);color:#8f1f2c}
+.fb span{display:block;font-weight:500;color:var(--ink);margin-top:2px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.stars{font-size:3rem;letter-spacing:6px;color:var(--paper);font-family:var(--display)}
+ol.steps{margin:8px 0 16px;padding-left:1.3em;display:grid;gap:8px}
+.need{color:var(--soft);font-size:.98rem;margin:6px 0}
+.check{display:grid;gap:8px;margin:10px 0}
+.check label{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;background:#f5f8fd;border-radius:10px;padding:10px 12px;cursor:pointer}
+.check input{width:24px;height:24px;margin:2px 0 0;accent-color:var(--ok)}
+.timer{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#f5f8fd;border-radius:12px;padding:10px 14px;margin:10px 0}
+.clock{font-family:var(--display);font-size:2.2rem;font-variant-numeric:tabular-nums;min-width:3.2em}
+.flash{min-height:110px;display:grid;place-items:center;text-align:center;background:#f5f8fd;border-radius:12px;padding:16px;font-size:1.4rem;font-weight:800;margin:10px 0}
+.flash.hidden{color:var(--soft);font-weight:700;font-size:1.1rem}
+.bar{height:8px;background:#dbe4f5;border-radius:9px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--screen);width:100%}
+.block{margin-top:22px;padding-top:18px;border-top:2px dashed #c9d6ea}
+.block h3 em{font-style:normal;background:var(--ink);color:#fff;border-radius:50%;width:1.6em;height:1.6em;display:inline-grid;place-items:center;margin-right:8px;font-size:1rem}
+.topic{font-family:var(--display);font-size:1.6rem;background:var(--hi);border-radius:12px;padding:12px 16px;margin:10px 0;min-height:2.6em}
+.tens{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.ten{width:52px;height:52px;border-radius:50%;border:2px dashed #9fb0d8;background:#fff;font-family:var(--display);font-size:1.1rem}
+.ten.on{background:var(--ok);border:2px solid var(--ok);color:#fff}
+.rub h4{font-family:var(--display);margin:16px 0 6px;font-size:1.15rem;display:flex;justify-content:space-between}
+.crit{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #e3eaf6}
+.crit small{color:var(--soft);font-weight:800}
+.tri{display:flex;gap:4px}
+.tri button{border:2px solid #b9c6e4;background:#fff;border-radius:8px;padding:6px 10px;font-weight:800;font-size:.9rem}
+.tri button.on[data-v="1"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.tri button.on[data-v="0.5"]{background:var(--hi);border-color:var(--ink)}
+.tri button.on[data-v="0"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.total{font-family:var(--display);font-size:2.6rem}
+.total small{font-size:1.1rem;color:var(--soft)}
+ul.todo{margin:8px 0 0;padding-left:1.2em}
+.foot{text-align:center;margin-top:30px;font-size:.85rem;color:var(--soft)}
+.foot a{color:var(--screen);font-weight:800}
+@media(max-width:520px){.crit{grid-template-columns:1fr}.st{grid-template-columns:44px 1fr}.num{width:44px;height:44px;font-size:1.4rem}}
+@media(prefers-reduced-motion:no-preference){.chip,.btn,.slot{transition:transform .08s}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const app=$('#app');
+let S={stars:{},best:0};
+try{const r=localStorage.getItem('mision80');if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
+const save=()=>{try{localStorage.setItem('mision80',JSON.stringify(S));}catch(e){}};
+const setStars=(k,n)=>{if((S.stars[k]||0)<n){S.stars[k]=n;save();}};
+const starStr=n=>'★'.repeat(n||0)+'☆'.repeat(3-(n||0));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const cap=s=>s.replace(/\p{L}/u,c=>c.toUpperCase());
+let timers=[];
+const every=(fn,ms)=>{const id=setInterval(fn,ms);timers.push(id);return id;};
+function h(html){timers.forEach(clearInterval);timers=[];app.innerHTML=html;window.scrollTo(0,0);}
+
+/* ---------- Contenido ---------- */
+const THEMES=[
+{id:'playa',name:'La playa',emoji:'🏖️',
+ may:[['*el domingo fuimos a la playa de *salgar.','Los días de la semana van con minúscula. Salgar es el nombre de un lugar.'],['*me gusta la playa. *el mar es azul y tibio.','Después de un punto siempre va mayúscula.'],['*mi prima *sofía hizo un castillo de arena.','Inicio de oración y nombre de persona.'],['*en enero viajamos a *santa *marta.','Los meses van con minúscula. Santa Marta lleva dos mayúsculas.']],
+ pun:['En mi maleta llevo toalla, sombrero, bloqueador y un balde.','La playa es amplia, soleada y tranquila. Allí juego con mis primos.','En la arena encontré conchas, piedras y un cangrejo.','El mar estaba tibio. Nadamos, saltamos olas y comimos helado.'],
+ adj:[['La playa tiene arena *blanca y agua *tibia.'],['Las olas eran *altas y el viento estaba *fresco.'],['🏖️','una playa','*soleada helada *arenosa oscura'],['🦀','un cangrejo','*pequeño gigante *rojo peludo']],
+ ort:[['Fuimos de ___ al mar.','viaje','biaje'],['Mi lugar favorito es la ___.','playa','plalla'],['El agua estaba ___.','tibia','tivia'],['Las ___ eran muy altas.','olas','holas'],['Hice un ___ de arena.','castillo','castiyo'],['___ me gusta nadar.','También','Tanbién','Tambien']],
+ order:['Mi lugar favorito es la playa.','Es amplia, tiene arena blanca y un mar azul.','Además, allí nado y hago castillos con mis primos.','Por eso, cuando estoy en la playa me siento feliz.'],
+ con:[['___ llegamos a la playa y armamos la carpa.','Primero','Finalmente','Porque'],['Nadamos toda la mañana. ___, comimos helado.','Luego','Porque','Aunque'],['Me gusta el mar ___ el agua es tibia.','porque','luego','primero']],
+ flash:['Mi lugar favorito es la playa porque el mar es tranquilo.','En la arena encontré conchas, piedras y un cangrejo rojo.','Allí siempre me divierto y nunca quiero volver a casa.'],
+ p:{may:'un paseo a la playa',pun:'Busca en tu casa 5 cosas que llevarías a la playa y ponlas sobre la mesa.',adj:'Busca algo que te recuerde el mar: una concha, una toalla o un sombrero.',org:'la playa'},
+ topics:['Un día en la playa','Mi playa favorita','El mejor lugar de mis vacaciones']},
+{id:'parque',name:'El parque',emoji:'🌳',
+ may:[['*el sábado fui al parque con *camila y *andrés.','Los días van con minúscula. Los nombres de personas, con mayúscula.'],['*mi perro se llama *toby. *él corre muy rápido.','Los nombres de las mascotas también son nombres propios.'],['*el parque *venezuela queda cerca de mi casa.','El nombre del parque es un nombre propio.'],['*¿quieres jugar conmigo? *vamos a los columpios.','Después del signo de pregunta que cierra empieza otra oración.']],
+ pun:['El parque es grande, verde y fresco. Allí juego con mis amigos.','En el parque hay columpios, rodaderos y una cancha.','Mi perro es suave, juguetón y veloz. Corre detrás de la pelota.','Llevamos agua, frutas y una cometa.'],
+ adj:[['El parque tiene árboles *altos y pasto *verde.'],['Mi amiga es *alegre y muy *rápida.'],['🌳','un árbol','*frondoso transparente *verde salado'],['🪁','una cometa','*colorida pesada *liviana ruidosa']],
+ ort:[['Los ___ son mis juegos favoritos.','columpios','colunpios'],['En el parque hay un ___ muy alto.','árbol','arbol','árvol'],['___ muchos pájaros en el parque.','Había','Abía','Havía'],['Allí ___ muchos juegos.','hay','ay','ahí'],['Corrí muy ___.','rápido','rapido','rrápido'],['Me siento ___ cuando estoy allí.','feliz','felis']],
+ order:['Mi lugar favorito es el parque de mi barrio.','Es amplio, verde y tiene columpios altos.','Después de jugar, me siento bajo un árbol a descansar.','Finalmente, regreso a casa feliz porque allí siempre me divierto.'],
+ con:[['El parque es bonito. ___, tiene muchos juegos.','Además','Pero','Porque'],['Me gusta ir allí ___ puedo correr libre.','porque','luego','primero'],['___, regresamos a casa cansados y felices.','Finalmente','Primero','Porque']],
+ flash:['Los sábados voy al parque con mi papá, mi mamá y mi hermano.','El parque de mi barrio es amplio, verde y fresco.','Me gusta porque allí puedo correr, saltar y jugar.'],
+ p:{may:'una tarde en el parque',pun:'Busca en tu casa 5 cosas para jugar al aire libre y ponlas sobre la mesa.',adj:'Sal al patio, al balcón o a una ventana y escoge una planta o un árbol.',org:'el parque'},
+ topics:['El parque de mi barrio','Un lugar al aire libre que me encanta','Mi lugar favorito para jugar']},
+{id:'finca',name:'La finca',emoji:'🐴',
+ may:[['*en diciembre viajamos a la finca de mi tío *jorge.','Los meses van con minúscula.'],['*la vaca se llama *lola. *ella da mucha leche.','Nombre propio y mayúscula después de punto.'],['*mi abuelo vive cerca de *usiacurí.','Inicio de oración y nombre de pueblo.'],['*hoy montamos a caballo. *mañana iremos al río.','Cada oración empieza con mayúscula.']],
+ pun:['En la finca hay vacas, caballos, gallinas y patos. Me encanta ir allá.','El campo es verde, silencioso y fresco.','Recogimos mangos, guayabas y limones. Hicimos un jugo delicioso.','Mi caballo es fuerte, manso y veloz.'],
+ adj:[['En la finca hay un río *limpio y árboles *enormes.'],['El gallo es *ruidoso y la vaca es *tranquila.'],['🐴','un caballo','*fuerte diminuto *veloz pegajoso'],['🥭','un mango','*dulce salado *jugoso cuadrado']],
+ ort:[['El ___ estaba lleno de flores.','campo','canpo'],['Montamos a ___.','caballo','cabayo','cavallo'],['La ___ nos dio leche.','vaca','baca'],['Las ___ ponen huevos.','gallinas','gayinas'],['Nos bañamos en el ___.','río','rio','rrío'],['Comimos mangos muy ___.','dulces','dulses']],
+ order:['Mi lugar favorito es la finca de mi tío.','Primero, es un lugar verde con muchos animales.','Además, allí monto a caballo y recojo mangos.','Por eso, siempre quiero volver a la finca.'],
+ con:[['___ les dimos comida a las gallinas.','Primero','Finalmente','Porque'],['Montamos a caballo. ___, nos bañamos en el río.','Después','Porque','Aunque'],['Me gusta la finca ___ hay muchos animales.','porque','luego','además']],
+ flash:['En la finca de mi tío hay vacas, caballos y gallinas.','El campo es verde, silencioso y muy fresco.','Me siento feliz cuando monto a caballo con mi abuelo.'],
+ p:{may:'un paseo a una finca',pun:'Busca en la cocina 5 alimentos que vienen del campo y ponlos sobre la mesa.',adj:'Escoge una fruta o una verdura de la cocina.',org:'una finca o un lugar en el campo'},
+ topics:['Un paseo al campo','Un lugar con animales que me encanta','La finca de mis sueños']},
+{id:'colegio',name:'El colegio',emoji:'🏫',
+ may:[['*mi profesora se llama *marta. *ella es muy amable.','Nombre de persona y mayúscula después de punto.'],['*los lunes tenemos clase de música.','Los días de la semana van con minúscula.'],['*mi amigo *samuel y yo leemos en la biblioteca.','Inicio de oración y nombre de persona.'],['*estudio en *barranquilla. *mi colegio es grande.','Nombre de ciudad y mayúscula después de punto.']],
+ pun:['En mi maleta llevo lápices, colores, cuadernos y un borrador.','Mi salón es amplio, limpio y ordenado. Tiene muchas ventanas.','En el recreo corremos, saltamos y comemos.','La biblioteca es silenciosa. Allí hay cuentos, mapas y revistas.'],
+ adj:[['Mi salón tiene ventanas *grandes y paredes *blancas.'],['La biblioteca es un lugar *silencioso y *ordenado.'],['📚','una biblioteca','ruidosa *silenciosa mojada *ordenada'],['✏️','un lápiz','*largo líquido *delgado peludo']],
+ ort:[['La ___ está cerca del salón.','biblioteca','viblioteca'],['Escribo en mi ___.','cuaderno','quaderno'],['Mi ___ es muy amable.','profesora','profezora'],['Saco punta a mi ___.','lápiz','lapiz','lápis'],['En el recreo ___ muchos juegos.','hay','ay','ahí'],['Mi ___ tiene muchas ventanas.','salón','salon','zalón']],
+ order:['Mi rincón favorito del colegio es la biblioteca.','Es silenciosa, fresca y está llena de libros.','Allí leo cuentos con mis amigos en el recreo.','Por eso, la biblioteca es el lugar que más me gusta.'],
+ con:[['___ saludamos a la profesora y sacamos los cuadernos.','Primero','Finalmente','Porque'],['La biblioteca es silenciosa. ___, tiene muchos cuentos.','Además','Pero','Porque'],['Me gusta el recreo ___ juego con mis amigos.','porque','luego','primero']],
+ flash:['Mi colegio es grande, alegre y tiene muchos árboles.','En la biblioteca hay cuentos, mapas y revistas.','Me gusta el recreo porque juego con mis amigos.'],
+ p:{may:'un día en tu colegio',pun:'Saca 5 útiles de tu maleta y ponlos sobre la mesa.',adj:'Escoge tu útil escolar favorito.',org:'tu rincón favorito del colegio'},
+ topics:['Mi rincón favorito del colegio','Mi salón de clases','El lugar donde más aprendo']},
+{id:'abuelos',name:'La casa de los abuelos',emoji:'🏡',
+ may:[['*mi abuela vive en *barranquilla.','Inicio de oración y nombre de ciudad.'],['*los domingos almorzamos donde mi abuelo *luis.','Los días van con minúscula. Luis es un nombre propio.'],['*mi abuela cocina rico. *su sopa es la mejor.','Después de un punto siempre va mayúscula.'],['*en *navidad toda la familia se reúne allí.','Navidad es el nombre de una fiesta y lleva mayúscula.']],
+ pun:['La casa es grande, antigua y fresca. Tiene un patio con matas.','Mi abuela prepara arepas, sopa y jugo de mango.','Mi gata es suave, juguetona y dormilona. Duerme en el sofá.','En el patio hay mecedoras, flores y un palo de mango.'],
+ adj:[['Mi abuelo es un señor *alto y *cariñoso.'],['En el jardín hay flores *rojas y un árbol *enorme.'],['🏡','una casa con jardín','*acogedora helada *bonita invisible'],['🍲','una sopa','*caliente ruidosa *deliciosa azul']],
+ ort:[['Mi ___ me lleva los domingos.','mamá','mama'],['El ___ de mi abuela es hermoso.','jardín','jardin','gardín'],['Mi ___ cuenta historias.','abuelo','avuelo','habuelo'],['La sopa estaba ___.','deliciosa','delisiosa','deliziosa'],['Toda la ___ se reúne allí.','familia','famillia'],['Me gusta ___ a mis abuelos.','visitar','bisitar','vicitar']],
+ order:['Mi lugar favorito es la casa de mis abuelos.','Primero, es una casa grande con un patio lleno de matas.','Además, allí juego con mis primos y como mangos.','Por eso, cuando estoy allí siento que es el mejor lugar del mundo.'],
+ con:[['___ saludo a mis abuelos con un abrazo.','Primero','Finalmente','Porque'],['Almorzamos juntos. ___, jugamos en el patio.','Luego','Porque','Aunque'],['___, nos despedimos y regresamos a casa.','Finalmente','Primero','Porque']],
+ flash:['En el jardín de mi abuela hay árboles altos y flores amarillas.','Los domingos almorzamos sopa, arroz y jugo de mango.','Me gusta ir allí porque mis abuelos me cuentan historias.'],
+ p:{may:'una visita a tus abuelos o a un familiar',pun:'Busca en tu casa 5 cosas que te recuerden a tu familia y ponlas sobre la mesa.',adj:'Escoge un objeto de tu casa que tenga muchos años.',org:'la casa de un familiar'},
+ topics:['La casa de mis abuelos','La casa de un familiar que quiero mucho','Un lugar donde me siento en familia']},
+{id:'zoo',name:'El zoológico',emoji:'🦁',
+ may:[['*el jueves visitamos el zoológico de *barranquilla.','Los días van con minúscula. Barranquilla es un nombre propio.'],['*la jirafa se llama *rita. *ella come hojas.','Nombre propio y mayúscula después de punto.'],['*mi hermano *mateo le tomó fotos al tigre.','Inicio de oración y nombre de persona.'],['*¿viste al mono? *estaba colgado de una rama.','Después del signo de pregunta que cierra empieza otra oración.']],
+ pun:['En el zoológico vimos tigres, monos, jirafas y flamencos.','El león es grande, fuerte y peludo. Duerme casi todo el día.','Los monos saltan, gritan y comen bananos.','Llevamos gorra, agua y una cámara.'],
+ adj:[['El tigre tiene rayas *negras y dientes *afilados.'],['La jirafa es *alta y muy *tranquila.'],['🦁','un león','*peludo diminuto *fuerte transparente'],['🦩','un flamenco','*rosado cuadrado *delgado peludo']],
+ ort:[['Visitamos el ___.','zoológico','zoologico','soológico'],['La ___ tiene el cuello largo.','jirafa','girafa'],['El ___ ruge muy fuerte.','león','leon'],['Los monos comen ___.','bananos','vananos'],['El elefante es ___.','gigante','jigante'],['___ muchos animales.','Había','Abía','Havía']],
+ order:['Mi lugar favorito es el zoológico.','Es un lugar grande, lleno de árboles y animales.','Además, allí veo a los monos y les tomo fotos a las jirafas.','Por eso, cada visita al zoológico me emociona mucho.'],
+ con:[['___ compramos las entradas y miramos el mapa.','Primero','Finalmente','Porque'],['Vimos a los leones. ___, visitamos a los monos.','Después','Porque','Aunque'],['Me gusta el zoológico ___ aprendo sobre los animales.','porque','luego','primero']],
+ flash:['En el zoológico vimos tigres, monos y jirafas.','El león es grande, fuerte y muy peludo.','Me gusta ir allí porque aprendo sobre los animales.'],
+ p:{may:'una visita al zoológico',pun:'Busca en tu casa 5 animales de juguete, peluches o dibujos de animales y ponlos sobre la mesa.',adj:'Escoge un peluche o un animal de juguete.',org:'el zoológico o un lugar con animales'},
+ topics:['Una visita al zoológico','Mi animal favorito y el lugar donde vive','Un lugar donde aprendo cosas nuevas']},
+{id:'montana',name:'La montaña',emoji:'🏔️',
+ may:[['*en junio subimos a la *sierra *nevada.','Los meses van con minúscula. Sierra Nevada lleva dos mayúsculas.'],['*hacía mucho frío. *mi papá encendió una fogata.','Después de un punto siempre va mayúscula.'],['*mi tía *paula vive en *minca.','Nombre de persona y nombre de pueblo.'],['*el río *gaira baja de la montaña.','El nombre del río es un nombre propio.']],
+ pun:['La montaña es alta, fría y silenciosa. Desde arriba se ve el mar.','En el bosque hay pájaros, ardillas y mariposas.','Llevamos chaqueta, botas, linterna y una carpa.','El aire estaba fresco. Caminamos, cantamos y tomamos chocolate.'],
+ adj:[['La montaña tiene caminos *estrechos y árboles *gigantes.'],['El río es *frío y el agua es *cristalina.'],['🏔️','una montaña','*alta plana diminuta *fría'],['🔥','una fogata','*caliente mojada *brillante helada']],
+ ort:[['Subimos a la ___.','montaña','montana'],['Hacía mucho ___.','frío','frio'],['Dormimos en una ___.','carpa','karpa'],['El ___ estaba lleno de pájaros.','bosque','vosque','bosce'],['Vimos una ___ de colores.','mariposa','maripoza'],['El ___ es puro.','aire','haire']],
+ order:['Mi lugar favorito es la montaña.','Es alta, fría y está cubierta de árboles.','Allí camino con mi familia y dormimos en una carpa.','Por eso, en la montaña me siento en paz.'],
+ con:[['___ armamos la carpa cerca del río.','Primero','Finalmente','Porque'],['La montaña es hermosa. ___, el aire es puro.','Además','Pero','Porque'],['___, apagamos la fogata y nos fuimos a dormir.','Finalmente','Primero','Porque']],
+ flash:['La montaña es alta, fría y muy silenciosa.','En el bosque vimos pájaros, ardillas y mariposas.','Me gusta la montaña porque el aire es fresco.'],
+ p:{may:'un paseo a la montaña',pun:'Busca en tu casa 5 cosas que llevarías a un campamento y ponlas sobre la mesa.',adj:'Escoge una prenda abrigada: una chaqueta, una cobija o unas medias.',org:'la montaña o un bosque'},
+ topics:['Un paseo a la montaña','Un campamento inolvidable','Un lugar tranquilo en la naturaleza']},
+{id:'cuarto',name:'Mi cuarto',emoji:'🛏️',
+ may:[['*mi cuarto queda en el segundo piso.','Solo la primera palabra lleva mayúscula.'],['*mi oso se llama *bruno. *duerme conmigo.','Nombre propio y mayúscula después de punto.'],['*los viernes ordeno mi cuarto con mi hermana *lucía.','Los días van con minúscula. Lucía es un nombre propio.'],['*tengo un mapa de *colombia en la pared.','Colombia es el nombre de un país.']],
+ pun:['Mi cuarto es pequeño. Tiene una cama, un escritorio y una lámpara.','En mi repisa hay libros, peluches y un trofeo.','Mi cama es suave, ancha y calientita.','Allí leo, dibujo y escucho música. Es mi lugar favorito.'],
+ adj:[['Mi cuarto tiene paredes *azules y una cama *suave.'],['Mi lámpara es *pequeña y da una luz *amarilla.'],['🛏️','una cama','*cómoda picante *blanda ruidosa'],['🧸','un oso de peluche','*suave afilado *tierno mojado']],
+ ort:[['Mi ___ es mi lugar favorito.','cuarto','quarto'],['Duermo en una cama ___.','suave','suabe'],['Prendo la ___ para leer.','lámpara','lampara','lánpara'],['Guardo mis ___ en la repisa.','libros','livros'],['Mi ___ es de madera.','escritorio','escritoryo','ezcritorio'],['Me gusta ___ en mi cuarto.','dibujar','dibugar','divujar']],
+ order:['Mi lugar favorito es mi cuarto.','Es pequeño, ordenado y tiene paredes azules.','Allí leo cuentos, dibujo y juego con mis peluches.','Por eso, en mi cuarto me siento en calma.'],
+ con:[['___ tiendo la cama y abro la ventana.','Primero','Finalmente','Porque'],['Leo un cuento. ___, apago la lámpara.','Luego','Porque','Aunque'],['Me gusta mi cuarto ___ allí están mis cosas favoritas.','porque','luego','primero']],
+ flash:['Mi cuarto es pequeño, ordenado y muy cómodo.','En mi repisa hay libros, peluches y un trofeo.','Allí leo, dibujo y escucho música todas las tardes.'],
+ p:{may:'tu cuarto y las personas que lo visitan',pun:'Ve a tu cuarto, escoge 5 de tus cosas favoritas y ponlas sobre la cama.',adj:'Escoge tu juguete o tu objeto favorito del cuarto.',org:'tu cuarto'},
+ topics:['Mi cuarto','Mi lugar favorito de la casa','Mi rincón para leer o jugar']},
+{id:'piscina',name:'La piscina',emoji:'🏊',
+ may:[['*los martes voy a clase de natación con *valeria.','Los días van con minúscula. Valeria es un nombre propio.'],['*el agua está fría. *me lanzo de todas formas.','Después de un punto siempre va mayúscula.'],['*mi profesor *carlos me enseñó a flotar.','Inicio de oración y nombre de persona.'],['*en vacaciones fuimos a una piscina en *cartagena.','Cartagena es el nombre de una ciudad.']],
+ pun:['En mi maletín llevo gafas, gorro, toalla y chanclas.','La piscina es grande, azul y profunda. Tiene un trampolín.','Nadamos, flotamos y jugamos con una pelota.','El agua estaba fresca. Salí feliz y con mucha hambre.'],
+ adj:[['La piscina tiene agua *azul y un trampolín *alto.'],['Mi toalla es *grande y muy *suave.'],['🏊','una piscina','*profunda seca *refrescante peluda'],['🥽','unas gafas de natación','*transparentes pesadas *ajustadas dulces']],
+ ort:[['Voy a clase de ___.','natación','natacion','natasión'],['La ___ es profunda.','piscina','pisina','picina'],['Me seco con la ___.','toalla','toaya'],['El agua estaba ___.','fría','fria'],['Me puse el ___ de baño.','vestido','bestido'],['Salté del ___.','trampolín','tranpolín','trampolin']],
+ order:['Mi lugar favorito es la piscina del club.','Es grande, azul y tiene un trampolín alto.','Allí nado con mis amigos y juego con una pelota.','Por eso, cada vez que voy salgo feliz.'],
+ con:[['___ me pongo el gorro y las gafas.','Primero','Finalmente','Porque'],['Nadamos una hora. ___, comimos un helado.','Después','Porque','Aunque'],['Me gusta la piscina ___ el agua me refresca.','porque','luego','primero']],
+ flash:['La piscina es grande, azul y muy profunda.','En mi maletín llevo gafas, gorro y una toalla.','Me gusta nadar porque el agua me refresca.'],
+ p:{may:'un día de piscina',pun:'Busca en tu casa 5 cosas que llevarías a la piscina y ponlas sobre la mesa.',adj:'Llena un vaso con agua fría y mete los dedos.',org:'la piscina'},
+ topics:['Un día en la piscina','El lugar donde practico mi deporte favorito','Mi lugar favorito para refrescarme']},
+{id:'ciudad',name:'Mi ciudad',emoji:'🏙️',
+ may:[['*vivo en *barranquilla, cerca del río *magdalena.','Los nombres de ciudades y ríos llevan mayúscula.'],['*en febrero bailamos en el *carnaval.','Los meses van con minúscula. Carnaval es el nombre de una fiesta.'],['*el domingo paseamos por el parque *sagrado *corazón.','Los días van con minúscula. El nombre del parque lleva mayúsculas.'],['*mi ciudad es alegre. *la gente es muy amable.','Después de un punto siempre va mayúscula.']],
+ pun:['En mi ciudad hay parques, museos, tiendas y un río.','Mi barrio es tranquilo, limpio y alegre. Tiene muchos árboles.','En la tienda compramos pan, leche y queso.','Las calles son anchas. Pasan buses, carros y bicicletas.'],
+ adj:[['Mi ciudad tiene edificios *altos y calles *anchas.'],['El río es *ancho y el atardecer es *hermoso.'],['🏙️','una ciudad','*grande diminuta *iluminada silenciosa'],['🚌','un bus','*largo redondo *ruidoso blando']],
+ ort:[['Mi ___ es alegre.','ciudad','siudad','ciudat'],['Vivo en un ___ tranquilo.','barrio','bario'],['Los ___ son muy altos.','edificios','edifisios','hedificios'],['Vamos en ___ al colegio.','bus','vus'],['La ___ es ancha.','calle','caye'],['Montamos en ___ por el parque.','bicicleta','bisicleta','vicicleta']],
+ order:['Mi lugar favorito es el malecón de mi ciudad.','Es largo, fresco y queda junto al río.','Allí monto en bicicleta y como helado con mi familia.','Por eso, me encanta ir al malecón cada domingo.'],
+ con:[['___ caminamos junto al río.','Primero','Finalmente','Porque'],['Mi barrio es tranquilo. ___, tiene un parque bonito.','Además','Pero','Porque'],['___, vimos el atardecer y regresamos a casa.','Finalmente','Primero','Porque']],
+ flash:['Mi ciudad es grande, alegre y muy calurosa.','En mi barrio hay parques, tiendas y muchos árboles.','Me gusta el malecón porque queda junto al río.'],
+ p:{may:'tu ciudad o tu barrio',pun:'Mira por una ventana o un balcón y cuenta 5 cosas que ves en la calle.',adj:'Escoge algo que compraron en una tienda de tu barrio: un pan, una fruta o un dulce.',org:'tu ciudad o tu barrio'},
+ topics:['Mi ciudad','Mi barrio','Mi lugar favorito de la ciudad']}
+];
+let TH=null;
+const pickTheme=()=>THEMES.find(t=>t.id===S.theme)||THEMES[Math.floor(Math.random()*THEMES.length)];
+const STATIONS=[
+{id:'may',name:'Mayúsculas',color:'#e0457b',
+ rule:'Usa mayúscula al empezar una oración, después de un punto y en los nombres de personas y lugares. Los días y los meses van con minúscula.',
+ rounds:th=>th.may.map(a=>({t:'pick',cap:1,q:'Toca las palabras que deben empezar con mayúscula.',s:a[0],why:a[1]})),
+ paper:th=>({title:'Detective de mayúsculas',need:'Cuaderno, lápiz y un color rojo.',
+  steps:[`Escribe 4 oraciones sobre ${th.p.may}.`,'Incluye el nombre de 2 personas y el de 1 ciudad o país.','Encierra con rojo todas las mayúsculas que escribiste.'],
+  check:['Cada oración empieza con mayúscula.','Los nombres de personas y lugares tienen mayúscula.','No hay mayúsculas en palabras que no las necesitan.']})},
+{id:'pun',name:'Puntos y comas',color:'#2f6bff',
+ rule:'La coma separa las cosas de una lista. Antes de la y no se pone coma. El punto cierra cada oración.',
+ rounds:th=>th.pun.map(s=>({t:'punct',s})),
+ paper:th=>({title:'La lista del explorador',need:'Cuaderno y lápiz. Vas a buscar cosas por tu casa.',
+  steps:[th.p.pun,'Escribe 3 oraciones que nombren esas cosas. Cada una debe tener una lista de 3 cosas o más.','Marca con un color cada coma y cada punto.'],
+  check:['Las cosas de cada lista están separadas con comas.','No hay coma antes de la y.','Todas las oraciones terminan con punto.']})},
+{id:'adj',name:'Adjetivos',color:'#1e9e6a',
+ rule:'Los adjetivos dicen cómo es algo: su color, tamaño, forma, olor, sonido o cómo te hace sentir.',
+ rounds:th=>th.adj.map(a=>a.length===1?{t:'pick',q:'Toca los adjetivos de la oración.',s:a[0]}:{t:'pick',scene:a[0],q:`Toca los 2 adjetivos que describen bien ${a[1]}.`,s:a[2]}),
+ paper:th=>({title:'Los cinco sentidos',need:'Cuaderno, lápiz y un color verde.',timer:1,timerLabel:'Cerrar los ojos un minuto',
+  steps:[th.p.adj,'Usa el reloj de abajo y cierra los ojos un minuto. Tócalo, huélelo y escucha lo que suena a tu alrededor.','Abre los ojos y escribe 5 oraciones: cómo se ve, cómo se siente al tocarlo, a qué huele, qué suena cerca y qué te hace sentir.','Subraya con verde todos los adjetivos. Deben ser 6 o más.'],
+  check:['Hay 6 adjetivos o más subrayados.','Usé más de un sentido, no solo la vista.','Escribí qué me hace sentir.']})},
+{id:'ort',name:'Ortografía',color:'#8a4fe0',
+ rule:'Antes de p y b se escribe m. Había y hay empiezan con h. Fíjate en las tildes.',
+ rounds:th=>shuffle(th.ort).map(a=>({t:'choice',s:a[0],opts:a.slice(1)})),
+ paper:th=>({flash:th.flash,title:'Dictado relámpago',need:'Cuaderno y lápiz al lado del computador.'})},
+{id:'org',name:'Orden de las ideas',color:'#f08a1c',
+ rule:'Tu texto necesita inicio (presentas el lugar), desarrollo (cómo es y qué haces) y cierre (por qué te gusta y qué sientes). Los conectores unen las ideas.',
+ rounds:th=>[{t:'order',q:'Toca las oraciones en el orden correcto.',items:th.order},...th.con.map(a=>({t:'choice',s:a[0],opts:a.slice(1)}))],
+ paper:th=>({title:'Mapa de ideas',need:'Una hoja en blanco y colores.',
+  steps:[`Dibuja 5 nubes grandes en la hoja. Tu tema es ${th.p.org}.`,'Escribe una pregunta en cada nube y respóndela con pocas palabras: ¿Cuál es el lugar? ¿Cómo es? (3 adjetivos) ¿Qué hago allí? ¿Por qué me gusta? ¿Qué siento cuando estoy allí?','Pon una I en la nube del inicio, una D en las del desarrollo y una C en las del cierre.','Guarda la hoja. Te sirve para el Gran Reto.'],
+  check:['Las 5 nubes tienen respuesta.','La nube de cómo es tiene 3 adjetivos.','Marqué cuál es el inicio, el desarrollo y el cierre.']})}
+];
+const RUBRIC=[
+ ['Contenido',[['Describe con claridad el lugar: cómo es, qué se hace allí, motivos y emociones.',10,'org'],['Usa adjetivos para describir el lugar y a las personas.',10,'adj'],['Explica por qué es su favorito y qué emoción siente allí.',10,'org']]],
+ ['Organización',[['Tiene inicio, desarrollo y cierre.',10,'org'],['Tiene 80 palabras o más y se entiende bien.',10,''],['Las ideas están en orden y unidas con conectores.',5,'org'],['Es creativo y original.',10,'adj'],['Trabajó con compromiso y terminó a tiempo.',5,'']]],
+ ['Lenguaje y estilo',[['Usa palabras que van con el tema.',10,'adj'],['La letra es clara y la hoja está bien presentada.',10,''],['Buena ortografía: mayúsculas, comas, puntos y palabras bien escritas.',10,'may']]]
+];
+
+/* ---------- Avatar heredado de los otros juegos de Chispas ---------- */
+const DEF = { print: 'nada', pet: 'nada', mouth: 'sonrisa', cheekShape: 'redondas', cheekColor: '#ff7f96', shadow: 'nada', gems: 'nada', gemColor: '#ffffff' };
+let avN = 0, profile = null, mine = null;
+try { profile = JSON.parse(localStorage.getItem('repaso-perfil')); } catch (e) {}
+try { mine = JSON.parse(localStorage.getItem('english-cup-perfil')); } catch (e) {}
+function avatarSVG(p, mood, vb) {
+  if (!p) return '';
+  p = { ...DEF, ...p };
+  const H = p.hair, S = p.skin, id = 'avc' + (++avN), hs = p.hairStyle;
+  let s = `<svg viewBox="${vb || '0 0 120 120'}" preserveAspectRatio="xMidYMid slice" class="av" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="60" cy="60" r="60"/></clipPath></defs><g clip-path="url(#${id})">`;
+  s += `<rect width="120" height="120" fill="${p.bg}"/>`;
+  if (hs === 'larga') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 L97 104 Q60 112 23 104Z" fill="${H}"/>`;
+  if (hs === 'coletas') s += `<circle cx="23" cy="64" r="14" fill="${H}"/><circle cx="97" cy="64" r="14" fill="${H}"/><circle cx="31" cy="56" r="4" fill="${p.shirt}"/><circle cx="89" cy="56" r="4" fill="${p.shirt}"/>`;
+  if (hs === 'moño') s += `<circle cx="60" cy="22" r="14" fill="${H}"/>`;
+  if (hs === 'rizos') s += [[32, 40], [44, 27], [60, 23], [76, 27], [88, 40], [29, 57], [91, 57], [31, 72], [89, 72]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="13" fill="${H}"/>`).join('');
+  if (hs === 'afro') s += `<circle cx="60" cy="50" r="42" fill="${H}"/>`;
+  if (hs === 'ondas') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 Q101 72 94 84 Q101 96 93 110 L27 110 Q19 96 26 84 Q19 72 27 60Z" fill="${H}"/>`;
+  if (hs === 'flequillo') s += `<path d="M25 62 Q23 21 60 21 Q97 21 95 62 L95 84 Q60 90 25 84Z" fill="${H}"/>`;
+  if (hs === 'cola') s += `<path d="M84 36 Q112 46 104 92 Q98 72 86 60Z" fill="${H}"/><circle cx="88" cy="42" r="4.5" fill="${p.shirt}"/>`;
+  if (hs === 'trenza') s += [[30, 72], [27, 84], [30, 96], [27, 108]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7.5" fill="${H}"/>`).join('') + `<circle cx="27" cy="116" r="3.5" fill="${p.shirt}"/>`;
+  if (hs === 'chonguitos') s += `<circle cx="35" cy="30" r="13" fill="${H}"/><circle cx="85" cy="30" r="13" fill="${H}"/>`;
+  if (hs === 'melena') s += `<path d="M27 60 Q25 22 60 22 Q95 22 93 60 L95 82 Q86 90 82 74 L38 74 Q34 90 25 82Z" fill="${H}"/>`;
+  if (hs === 'dos trenzas') s += [[31, 70], [28, 81], [31, 92], [28, 103], [89, 70], [92, 81], [89, 92], [92, 103]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="${H}"/>`).join('') + `<circle cx="28" cy="111" r="3.5" fill="${p.shirt}"/><circle cx="92" cy="111" r="3.5" fill="${p.shirt}"/>`;
+  if (hs === 'cola alta') s += `<path d="M52 26 Q44 4 60 2 Q80 2 84 22 Q88 36 80 44 Q78 26 68 22Z" fill="${H}"/><circle cx="60" cy="24" r="4.5" fill="${p.shirt}"/>`;
+  s += `<path d="M16 120 Q18 92 60 92 Q102 92 104 120Z" fill="${p.shirt}"/>`;
+  if (p.print !== 'nada') s += `<text x="60" y="116" text-anchor="middle" font-size="14">${p.print}</text>`;
+  s += `<rect x="52" y="78" width="16" height="16" fill="${S}"/>`;
+  s += `<circle cx="31" cy="60" r="5" fill="${S}"/><circle cx="89" cy="60" r="5" fill="${S}"/><circle cx="60" cy="58" r="29" fill="${S}"/>`;
+  if (hs === 'corta' || hs === 'larga') s += `<path d="M30 56 Q28 26 60 26 Q92 26 90 56 Q86 42 72 38 Q60 46 44 40 Q34 44 30 56Z" fill="${H}"/>`;
+  if (['coletas', 'moño', 'cola', 'trenza', 'chonguitos', 'dos trenzas', 'cola alta'].includes(hs)) s += `<path d="M31 52 Q32 27 60 27 Q88 27 89 52 Q75 36 60 36 Q45 36 31 52Z" fill="${H}"/>`;
+  if (hs === 'rizos' || hs === 'afro') s += [[40, 36, 10], [52, 31, 10], [67, 31, 10], [80, 36, 10], [34, 46, 8], [86, 46, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
+  if (hs === 'ondas') s += `<path d="M30 60 Q27 25 60 25 Q93 25 90 60 Q88 40 70 33 Q48 34 30 60Z" fill="${H}"/>`;
+  if (hs === 'flequillo') s += `<path d="M30 52 Q30 25 60 25 Q90 25 90 52Z" fill="${H}"/>`;
+  if (hs === 'degradado') s += `<path d="M31 50 Q31 28 60 28 Q89 28 89 50 Q76 38 60 38 Q44 38 31 50Z" fill="${H}" opacity=".4"/><path d="M36 41 Q37 21 60 21 Q83 21 84 41 Q72 34 60 34 Q48 34 36 41Z" fill="${H}"/>`;
+  if (hs === 'mohicano') s += `<path d="M31 50 Q31 29 60 29 Q89 29 89 50 Q76 39 60 39 Q44 39 31 50Z" fill="${H}" opacity=".3"/><path d="M51 42 Q47 14 60 6 Q73 14 69 42 Q60 37 51 42Z" fill="${H}"/>`;
+  if (hs === 'tazón') s += `<path d="M29 59 Q25 23 60 23 Q95 23 91 59 Q90 49 87 49 L33 49 Q30 49 29 59Z" fill="${H}"/>`;
+  if (hs === 'cortina') s += `<path d="M29 61 Q26 23 60 25 Q94 23 91 61 Q87 42 60 31 Q33 42 29 61Z" fill="${H}"/>`;
+  if (hs === 'rizos cortos') s += [[38, 37, 9], [48, 30, 9], [60, 27, 9], [72, 30, 9], [82, 37, 9], [33, 47, 7], [87, 47, 7]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
+  if (hs === 'melena') s += `<path d="M30 58 Q26 26 58 24 Q93 23 90 58 Q89 44 80 37 Q58 45 39 33 Q32 44 30 58Z" fill="${H}"/>`;
+  if (hs === 'rapado') s += `<path d="M31 50 Q31 28 60 28 Q89 28 89 50 Q76 38 60 38 Q44 38 31 50Z" fill="${H}" opacity=".9"/>`;
+  if (hs === 'de lado') s += `<path d="M30 57 Q26 26 58 24 Q93 23 90 57 Q89 44 80 37 Q58 45 39 33 Q32 44 30 57Z" fill="${H}"/>`;
+  if (hs === 'copete') s += `<path d="M30 55 Q27 30 46 24 Q52 12 72 16 Q92 22 90 55 Q86 41 72 39 Q54 44 42 37 Q33 44 30 55Z" fill="${H}"/>`;
+  if (hs === 'puntas') s += `<path d="M30 55 L32 31 L40 39 L44 21 L52 34 L60 16 L68 34 L76 21 L80 39 L88 31 L90 55 Q76 40 60 40 Q44 40 30 55Z" fill="${H}" stroke="${H}" stroke-width="2" stroke-linejoin="round"/>`;
+  if (p.shadow !== 'nada') s += `<ellipse cx="49" cy="54.5" rx="7.5" ry="4.5" fill="${p.shadow}" opacity=".55"/><ellipse cx="71" cy="54.5" rx="7.5" ry="4.5" fill="${p.shadow}" opacity=".55"/>`;
+  const star5 = (x, y, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * .45 : r; d += (i ? 'L' : 'M') + (x + rr * Math.cos(a)).toFixed(1) + ' ' + (y + rr * Math.sin(a)).toFixed(1); } return d + 'Z'; };
+  const eyeHeart = (x, y) => `<path d="M${x} ${y + 5} C${x - 8} ${y - 1} ${x - 4} ${y - 7} ${x} ${y - 3} C${x + 4} ${y - 7} ${x + 8} ${y - 1} ${x} ${y + 5}Z" fill="#e0245e"/>`;
+  if (p.eyes === 'estrellas') s += `<path d="${star5(49, 58, 6.5)}" fill="#f5b301" stroke="#2b2b2b" stroke-width="1" stroke-linejoin="round"/><path d="${star5(71, 58, 6.5)}" fill="#f5b301" stroke="#2b2b2b" stroke-width="1" stroke-linejoin="round"/>`;
+  else if (p.eyes === 'corazones') s += eyeHeart(49, 58) + eyeHeart(71, 58);
+  else if (p.eyes === 'dormilón') s += `<path d="M44 57 Q49 62 54 57 M66 57 Q71 62 76 57" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/><text x="81" y="47" font-size="10" font-weight="700" fill="#2b2b2b">z</text><text x="88" y="40" font-size="7" font-weight="700" fill="#2b2b2b">z</text>`;
+  else if (p.eyes === 'guiño') s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><path d="M66 58 Q71 62 76 58" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  else if (p.eyes === 'grandes') s += `<ellipse cx="49" cy="57" rx="6" ry="7" fill="#fff" stroke="#2b2b2b" stroke-width="1.5"/><ellipse cx="71" cy="57" rx="6" ry="7" fill="#fff" stroke="#2b2b2b" stroke-width="1.5"/><circle cx="50" cy="58" r="3.6" fill="#2b2b2b"/><circle cx="72" cy="58" r="3.6" fill="#2b2b2b"/><circle cx="51.3" cy="56.6" r="1.2" fill="#fff"/><circle cx="73.3" cy="56.6" r="1.2" fill="#fff"/>`;
+  else if (p.eyes === 'felices') s += `<path d="M44 59 Q49 53 54 59 M66 59 Q71 53 76 59" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  else s += `<circle cx="49" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="71" cy="58" r="3.8" fill="#2b2b2b"/><circle cx="50.2" cy="56.8" r="1.2" fill="#fff"/><circle cx="72.2" cy="56.8" r="1.2" fill="#fff"/>`;
+  if (p.eyes === 'pestañas') s += `<path d="M44 54 L41 51 M46.5 52.5 L45 49 M76 54 L79 51 M73.5 52.5 L75 49" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>`;
+  const cc = p.cheekColor, csh = p.cheekShape;
+  const heart = (x, y) => `<path d="M${x} ${y + 4} C${x - 7} ${y - 1} ${x - 4} ${y - 7} ${x} ${y - 3} C${x + 4} ${y - 7} ${x + 7} ${y - 1} ${x} ${y + 4}Z" fill="${cc}" opacity=".7"/>`;
+  if (csh === 'redondas') s += `<circle cx="43" cy="68" r="5" fill="${cc}" opacity=".45"/><circle cx="77" cy="68" r="5" fill="${cc}" opacity=".45"/>`;
+  else if (csh === 'óvalo') s += `<ellipse cx="42" cy="68" rx="7.5" ry="4" fill="${cc}" opacity=".45"/><ellipse cx="78" cy="68" rx="7.5" ry="4" fill="${cc}" opacity=".45"/>`;
+  else if (csh === 'corazones') s += heart(43, 68) + heart(77, 68);
+  else if (csh === 'rayitas') s += `<g stroke="${cc}" stroke-width="1.8" stroke-linecap="round" opacity=".85">` + [37, 41, 45].map(x => `<path d="M${x} 70 L${x + 3} 66"/>`).join('') + [72, 76, 80].map(x => `<path d="M${x} 66 L${x + 3} 70"/>`).join('') + `</g>`;
+  const L = '#7a2633', ln = d => `<path d="${d}" stroke="${L}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const MOUTHS = {
+    sonrisa: ln('M52 70 Q60 77 68 70'),
+    sonrisota: `<path d="M49 67 Q60 83 71 67Z" fill="${L}"/><path d="M53 70 Q60 75 67 70" stroke="#fff" stroke-width="2" fill="none"/>`,
+    dientes: `<path d="M50 68 Q60 80 70 68Z" fill="${L}"/><path d="M51.5 69 L68.5 69 Q66 72.5 60 72.5 Q54 72.5 51.5 69Z" fill="#fff"/>`,
+    lengua: `<path d="M50 68 Q60 79 70 68Z" fill="${L}"/><path d="M57 72 Q57 80 62 80 Q67 80 67 72Z" fill="#ff7f96" stroke="${L}" stroke-width="1.2"/><path d="M62 73 L62 77" stroke="#e0577c" stroke-width="1.2"/>`,
+    gatito: ln('M52 70 Q56 74.5 60 70 Q64 74.5 68 70'),
+    beso: `<path d="M57.5 67.5 Q62 69.5 59 71 Q62.5 72.5 57.5 75" stroke="${L}" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M73 75 C69.5 72.5 70.5 69 73 71 C75.5 69 76.5 72.5 73 75Z" fill="#ff4f81"/>`,
+    'tímida': ln('M55 71 Q61 74.5 66 70'),
+    sorpresa: `<ellipse cx="60" cy="72" rx="4" ry="4.5" fill="${L}"/>`,
+    seria: ln('M53 71 L67 71'),
+    triste: ln('M52 74 Q60 68 68 74'),
+    colmillos: ln('M52 70 Q60 77 68 70') + `<path d="M54.5 72.3L56.5 77.5L58.8 73.8ZM61.2 73.8L63.5 77.5L65.5 72.3Z" fill="#fff" stroke="${L}" stroke-width=".7" stroke-linejoin="round"/>`,
+    bigote: `<path d="M60 67.5 Q53 62 45 67 Q52 72 60 69 Q68 72 75 67 Q67 62 60 67.5Z" fill="#4a2d1a"/>` + ln('M55 74 Q60 77.5 65 74'),
+    chicle: `<circle cx="62" cy="75" r="8.5" fill="#ff8fc0" stroke="#e0577c" stroke-width="1"/><circle cx="59" cy="72" r="2.2" fill="#fff" opacity=".85"/>`
+  };
+  s += MOUTHS[mood === 'happy' ? 'sonrisota' : mood === 'think' ? 'sorpresa' : p.mouth] || MOUTHS.sonrisa;
+  const gc = p.gemColor;
+  const pearl = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${gc}" stroke="rgba(0,0,0,.28)" stroke-width=".6"/><circle cx="${x - r * .35}" cy="${y - r * .35}" r="${r * .35}" fill="#fff" opacity=".9"/>`;
+  const spark = (x, y, r) => `<path d="M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r}Z" fill="${gc}" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>`;
+  if (p.gems === 'ojos') s += [[42, 63], [45.5, 65.5], [49.5, 66.5], [78, 63], [74.5, 65.5], [70.5, 66.5]].map(([x, y]) => pearl(x, y, 1.8)).join('');
+  if (p.gems === 'frente') s += [[50, 46], [55, 44], [60, 43], [65, 44], [70, 46]].map(([x, y], i) => pearl(x, y, i === 2 ? 2.6 : 2)).join('');
+  if (p.gems === 'mejillas') s += [[36, 65], [37.5, 70.5], [84, 65], [82.5, 70.5]].map(([x, y]) => pearl(x, y, 2)).join('');
+  if (p.gems === 'estrellas') s += spark(38, 51, 4) + spark(82, 51, 4) + spark(84, 66, 3);
+  if (p.gems === 'corazón') s += `<path d="M76 70 C71 66.5 73 62 76 64.5 C79 62 81 66.5 76 70Z" fill="${gc}" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>`;
+  if (p.acc === 'gafas') s += `<g stroke="#2f3542" stroke-width="2.6" fill="#fff" fill-opacity=".18"><circle cx="49" cy="58" r="8.5"/><circle cx="71" cy="58" r="8.5"/><path d="M57.5 58 L62.5 58" fill="none"/></g>`;
+  if (p.acc === 'lazo') s += `<path d="M84 32 L71 23 L72 41Z M84 32 L97 23 L96 41Z" fill="#ff4f81"/><circle cx="84" cy="32" r="4.5" fill="#d6265a"/>`;
+  if (p.acc === 'corona') s += `<path d="M41 30 L45 14 L53 24 L60 9 L67 24 L75 14 L79 30Z" fill="#f5c400" stroke="#c99a00" stroke-width="2" stroke-linejoin="round"/>`;
+  if (p.acc === 'flor') s += [[84, 26], [91, 31], [88, 39], [80, 39], [77, 31]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5.5" fill="#fff" stroke="#f2a7c0"/>`).join('') + `<circle cx="84" cy="33" r="4" fill="#f5b301"/>`;
+  if (p.acc === 'estrella') s += `<polygon points="86,20 89,28 97,28 91,33 93,41 86,36 79,41 81,33 75,28 83,28" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (p.acc === 'diadema') s += `<path d="M31 46 Q32 22 60 22 Q88 22 89 46" stroke="#ff4f81" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="60" cy="22" r="4" fill="#fff"/>`;
+  if (p.acc === 'mariposa') s += `<g transform="translate(85 32)"><ellipse cx="-6" cy="-4" rx="7" ry="6" fill="#8a3fc7"/><ellipse cx="6" cy="-4" rx="7" ry="6" fill="#8a3fc7"/><ellipse cx="-5" cy="5" rx="5" ry="4" fill="#b77ee0"/><ellipse cx="5" cy="5" rx="5" ry="4" fill="#b77ee0"/><rect x="-1.5" y="-8" width="3" height="16" rx="1.5" fill="#2f3542"/></g>`;
+  if (p.acc === 'arcoíris') s += `<g fill="none" stroke-width="3.5" stroke-linecap="round"><path d="M73 38 A11 11 0 0 1 95 38" stroke="#e84a4a"/><path d="M76.5 38 A7.5 7.5 0 0 1 91.5 38" stroke="#f5c400"/><path d="M80 38 A4 4 0 0 1 88 38" stroke="#2f7fe0"/></g>`;
+  if (p.acc === 'nota') s += `<g fill="#2f3542"><ellipse cx="88" cy="40" rx="5.5" ry="4.2"/><rect x="91.5" y="18" width="2.6" height="22"/><path d="M94 18 Q103 22 101 31 Q99 25 94 25Z"/></g>`;
+  if (p.acc === 'audífonos') s += `<path d="M28 60 Q26 17 60 17 Q94 17 92 60" stroke="#2f3542" stroke-width="6" fill="none"/><rect x="22" y="51" width="13" height="21" rx="5" fill="#ff4f81"/><rect x="85" y="51" width="13" height="21" rx="5" fill="#ff4f81"/>`;
+  if (p.acc === 'gorro') s += `<path d="M29 50 Q29 14 60 14 Q91 14 91 50Z" fill="#ff8a3d"/><rect x="27" y="44" width="66" height="10" rx="5" fill="#e06a1f"/><circle cx="60" cy="12" r="7" fill="#fff"/>`;
+  if (p.acc === 'gafas de sol') s += `<rect x="38" y="52" width="20" height="12" rx="5" fill="#1d2330"/><rect x="62" y="52" width="20" height="12" rx="5" fill="#1d2330"/><path d="M58 56H62M38 56L31 54M82 56L89 54" stroke="#1d2330" stroke-width="2.5" fill="none"/><path d="M42 55L47 55M66 55L71 55" stroke="#fff" stroke-width="1.5" opacity=".6"/>`;
+  if (p.acc === 'antifaz') s += `<path d="M35 52 Q48 45 60 52 Q72 45 85 52 Q87 63 76 66 Q66 67 60 60 Q54 67 44 66 Q33 63 35 52Z" fill="#d42a3a"/><ellipse cx="49" cy="58" rx="5.5" ry="4.5" fill="#fff"/><ellipse cx="71" cy="58" rx="5.5" ry="4.5" fill="#fff"/><circle cx="49" cy="58" r="2.6" fill="#2b2b2b"/><circle cx="71" cy="58" r="2.6" fill="#2b2b2b"/>`;
+  if (p.acc === 'cinta') s += `<path d="M31 43 Q60 33 89 43 L89 50 Q60 40 31 50Z" fill="#e2432a"/><path d="M88 45 L101 40 L98 49 L104 56 L91 51Z" fill="#c2321c"/>`;
+  if (p.acc === 'gorra atrás') s += `<path d="M30 45 Q30 15 60 15 Q90 15 90 45Z" fill="#11877b"/><path d="M31 40 Q19 39 14 47 Q24 50 33 46Z" fill="#0b5f57"/><path d="M47 45 Q60 36 73 45" stroke="#0b5f57" stroke-width="3" fill="none"/>`;
+  if (p.acc === 'pirata') s += `<path d="M22 41 Q40 31 43 15 Q60 5 77 15 Q80 31 98 41 Q60 30 22 41Z" fill="#1d2330"/><circle cx="60" cy="22" r="5.5" fill="#fff"/><circle cx="58" cy="21" r="1.3" fill="#1d2330"/><circle cx="62" cy="21" r="1.3" fill="#1d2330"/><path d="M53 30L67 34M67 30L53 34" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`;
+  if (p.acc === 'dino') s += `<path d="M47 17L51 5L57 15ZM56 14L61 1L67 14ZM66 15L72 5L76 18Z" fill="#f0a202"/><path d="M29 49 Q27 14 60 14 Q93 14 91 49 Q77 35 60 35 Q43 35 29 49Z" fill="#3aa655"/><circle cx="45" cy="26" r="4.5" fill="#fff"/><circle cx="75" cy="26" r="4.5" fill="#fff"/><circle cx="45" cy="26.5" r="2" fill="#2b2b2b"/><circle cx="75" cy="26.5" r="2" fill="#2b2b2b"/>`;
+  if (p.acc === 'gorra') s += `<path d="M30 45 Q30 15 60 15 Q90 15 90 45Z" fill="#2f6fd6"/><path d="M56 38 Q92 34 106 47 Q90 52 56 47Z" fill="#1f4f9e"/><circle cx="60" cy="16" r="3" fill="#1f4f9e"/>`;
+  if (p.acc === 'rayo') s += `<polygon points="90,14 77,33 85,33 79,48 96,27 87,27" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (p.acc === 'balón') s += `<circle cx="88" cy="30" r="10" fill="#fff" stroke="#2f3542" stroke-width="2"/><polygon points="88,25 92.5,28.5 90.8,33.5 85.2,33.5 83.5,28.5" fill="#2f3542"/><path d="M88 25V20M92.5 28.5L97 27M90.8 33.5L93.5 38M85.2 33.5L82.5 38M83.5 28.5L79 27" stroke="#2f3542" stroke-width="1.5"/>`;
+  if (p.acc === 'orejas de gato') s += `<path d="M34 36L35 14L52 26Z" fill="${H}"/><path d="M86 36L85 14L68 26Z" fill="${H}"/><path d="M38 31L38.5 20L47 26.5Z" fill="#ff9ec4"/><path d="M82 31L81.5 20L73 26.5Z" fill="#ff9ec4"/>`;
+  if (p.acc === 'orejas de conejo') s += `<ellipse cx="46" cy="14" rx="7" ry="17" fill="#fff" stroke="#d9c6cf" transform="rotate(-10 46 14)"/><ellipse cx="74" cy="14" rx="7" ry="17" fill="#fff" stroke="#d9c6cf" transform="rotate(10 74 14)"/><ellipse cx="46" cy="15" rx="3" ry="11" fill="#ff9ec4" transform="rotate(-10 46 15)"/><ellipse cx="74" cy="15" rx="3" ry="11" fill="#ff9ec4" transform="rotate(10 74 15)"/>`;
+  if (p.acc === 'unicornio') s += `<path d="M60 1L53 28L67 28Z" fill="#f5c400" stroke="#c99a00" stroke-width="1.5" stroke-linejoin="round"/><path d="M56.5 14L64 11M55 21L66 17" stroke="#c99a00" stroke-width="1.5"/>`;
+  if (p.acc === 'tiara') s += `<path d="M40 34 Q44 22 52 28 Q56 16 60 14 Q64 16 68 28 Q76 22 80 34" stroke="#c9ccd6" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="60" cy="21" r="3.5" fill="#ff4f81"/><circle cx="48" cy="29" r="2" fill="#7ad3ff"/><circle cx="72" cy="29" r="2" fill="#7ad3ff"/>`;
+  if (p.acc === 'mago') s += `<path d="M60 -6L38 33L82 33Z" fill="#5a2482"/><ellipse cx="60" cy="33" rx="31" ry="6.5" fill="#43186b"/><path d="${star5(58, 17, 5)}" fill="#f5c400"/><circle cx="67" cy="26" r="1.6" fill="#f5c400"/><circle cx="52" cy="27" r="1.3" fill="#f5c400"/>`;
+  if (p.acc === 'casco espacial') s += `<circle cx="60" cy="56" r="41" fill="#a9d4ff" fill-opacity=".22" stroke="#e8eef5" stroke-width="5"/><path d="M30 38 Q40 22 56 19" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><rect x="50" y="94" width="20" height="6" rx="3" fill="#c9ccd6"/>`;
+  if (p.acc === 'pecas') s += [[41, 64], [45, 67], [40, 69], [79, 64], [75, 67], [80, 69]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.3" fill="#8a5a3c"/>`).join('');
+  if (p.pet !== 'nada') s += `<text x="89" y="101" text-anchor="middle" font-size="23">${p.pet}</text>`;
+  return s + `</g></svg>`;
+}
+
+const hasAvatar = () => !!(profile && profile.skin);
+const playerName = () => String((hasAvatar() && profile.name) || (mine && mine.name) || '').replace(/[&<>"]/g, '');
+const avatarHTML = (mood, cls) => hasAvatar() ? `<span class="avwrap ${cls || ''}">${avatarSVG(profile, mood || '')}</span>` : (mine && mine.emo ? `<span class="avwrap emo ${cls || ''}">${String(mine.emo).replace(/[&<>"]/g, '')}</span>` : '');
+
+/* ---------- Mapa ---------- */
+function total(){return Object.values(S.stars).reduce((a,b)=>a+b,0);}
+function home(){
+ h(`<header class="hero">${avatarHTML('happy')}<div style="flex:1 1 260px">${playerName()?`<p class="hello">¡Hola, ${playerName()}!</p>`:''}<h1>Misión <mark>Escritura</mark></h1>
+ <p>Prepárate para escribir tu narración descriptiva. Cada reto tiene una misión en pantalla y otra en papel.</p></div>
+ <div class="score">${total()} / 33 ★<small>${S.best?('Mejor Gran Reto: '+S.best+' / 100'):'estrellas ganadas'}</small></div></header>
+ <section class="sheet themes"><h3>Elige un escenario</h3><p class="need">Cada escenario trae ejercicios distintos en los cinco retos. Cuando termines uno, cambia y repite.</p>
+ <div class="chips">${THEMES.map(t=>`<button class="chip th${S.theme===t.id?' sel':''}" data-t="${t.id}">${t.emoji} ${t.name}</button>`).join('')}<button class="chip th${THEMES.some(t=>t.id===S.theme)?'':' sel'}" data-t="azar">🎲 Sorpresa</button></div></section>
+ <div class="stations">${STATIONS.map((s,i)=>`<section class="sheet st" style="--c:${s.color}"><div class="num">${i+1}</div><div><h2>${s.name}</h2><p>${s.rule}</p>
+ <div class="go"><button class="btn screen" data-s="${i}" data-m="screen">En pantalla<span class="s">${starStr(S.stars[s.id+'_s'])}</span></button>
+ <button class="btn paper" data-s="${i}" data-m="paper">En papel<span class="s">${starStr(S.stars[s.id+'_p'])}</span></button></div></div></section>`).join('')}
+ <section class="sheet st final"><div class="num">6</div><div><h2>El Gran Reto</h2><p>Escribe en papel tu narración completa, como en el examen. Después un adulto la revisa con la rúbrica del colegio.</p>
+ <div class="go"><button class="btn" id="final">Empezar el reto<span class="s">${starStr(S.stars.final)}</span></button></div></div></section></div>
+ <footer class="foot">Desarrollado con ❤️ por el equipo de <a href="https://logru.co" target="_blank" rel="noopener">Logru.co</a></footer>`);
+ $$('[data-s]').forEach(b=>b.onclick=()=>{const st=STATIONS[+b.dataset.s];b.dataset.m==='screen'?runScreen(st):runPaper(st);});
+ $('#final').onclick=runFinal;
+ $$('[data-t]').forEach(b=>b.onclick=()=>{S.theme=b.dataset.t;save();$$('[data-t]').forEach(x=>x.classList.toggle('sel',x===b));});
+}
+function shell(st,kind,prog,body){
+ h(`<div class="top"><button class="btn ghost" id="back">← Mapa</button><span class="pill ${kind}">${kind==='screen'?'En pantalla':'En papel'}</span>${TH?`<span class="pill theme">${TH.emoji} ${TH.name}</span>`:''}<span class="prog">${prog}</span></div>
+ <section class="sheet" style="border-left-color:${st.color}"><h2>${st.name}</h2>${body}<div id="fb"></div><div class="actions" id="act"></div></section>`);
+ $('#back').onclick=home;
+}
+function feedback(good,why,cb){
+ $('#fb').innerHTML=`<div class="fb ${good?'good':'bad'}">${good?'¡Muy bien!':'Casi. Mira la respuesta correcta en verde.'}${why?`<span>${why}</span>`:''}</div>`;
+ $('#act').innerHTML='<button class="btn" id="next">Siguiente →</button>';
+ $('#next').onclick=()=>cb(good);$('#next').focus();
+}
+
+/* ---------- Misiones en pantalla ---------- */
+function runScreen(st){
+ TH=pickTheme();const rounds=st.rounds(TH);let i=0,ok=0;
+ const next=()=>{if(i>=rounds.length)return done();const r=rounds[i];
+  R[r.t](st,r,`${i+1} / ${rounds.length}`,g=>{if(g)ok++;i++;next();});};
+ function done(){const p=ok/rounds.length,n=p>=.9?3:p>=.65?2:p>=.4?1:0;setStars(st.id+'_s',n);
+  shell(st,'screen','',`${avatarHTML(n?'happy':'think','big')}<p class="stars">${starStr(n)}</p><p class="q">Acertaste ${ok} de ${rounds.length} al primer intento.</p><p>${n===3?'¡Dominas esta regla! Ahora llévala al papel.':'Puedes repetir la misión para ganar más estrellas.'} En el mapa puedes cambiar de escenario para practicar con otro tema.</p>`);
+  $('#act').innerHTML='<button class="btn paper" id="p">Ir a la misión en papel</button><button class="btn ghost" id="r">Repetir</button>';
+  $('#p').onclick=()=>runPaper(st,TH);$('#r').onclick=()=>runScreen(st);}
+ next();
+}
+const R={
+ pick(st,r,prog,cb){
+  const tk=r.s.split(' ').map(t=>({w:t.replace('*',''),ok:t[0]==='*'}));
+  shell(st,'screen',prog,`<div class="rule">${st.rule}</div><p class="q">${r.q}</p>${r.scene?`<div class="scene">${r.scene}</div>`:''}
+  <div class="chips">${tk.map((t,k)=>`<button class="chip" data-k="${k}">${t.w}</button>`).join('')}</div>`);
+  $$('.chip').forEach(c=>c.onclick=()=>c.classList.toggle('sel'));
+  $('#act').innerHTML='<button class="btn" id="chk">Comprobar</button>';
+  $('#chk').onclick=()=>{let good=true;$$('.chip').forEach(c=>{const t=tk[+c.dataset.k],sel=c.classList.contains('sel');
+    if(sel!==t.ok)good=false;c.classList.remove('sel');c.disabled=true;
+    if(t.ok){c.classList.add('right');if(r.cap)c.textContent=cap(t.w);}else if(sel)c.classList.add('wrong');});
+   feedback(good,r.why,cb);};
+ },
+ punct(st,r,prog,cb){
+  const tk=r.s.split(' ').map(t=>{const m=t.match(/^(.*?)([.,]?)$/);return{w:m[1],p:m[2]};});
+  shell(st,'screen',prog,`<div class="rule">${st.rule}</div><p class="q">Toca las casillas para poner coma o punto. Un toque pone coma, dos toques ponen punto y tres la dejan vacía.</p>
+  <div class="chips">${tk.map((t,k)=>`<span class="word">${t.w}</span><button class="slot" data-k="${k}" aria-label="signo después de ${t.w}"></button>`).join('')}</div>`);
+  const cyc=['',',','.'];
+  $$('.slot').forEach(b=>b.onclick=()=>{const v=cyc[(cyc.indexOf(b.textContent)+1)%3];b.textContent=v;b.classList.toggle('on',!!v);});
+  $('#act').innerHTML='<button class="btn" id="chk">Comprobar</button>';
+  $('#chk').onclick=()=>{let good=true;$$('.slot').forEach(b=>{const t=tk[+b.dataset.k];b.classList.remove('on');b.disabled=true;
+    if(b.textContent!==t.p){good=false;b.classList.add(t.p?'right':'wrong');if(t.p)b.textContent=t.p;}
+    else if(t.p)b.classList.add('right');});
+   feedback(good,good?'':'Las casillas rojas no llevaban signo. Las verdes muestran el signo correcto.',cb);};
+ },
+ choice(st,r,prog,cb){
+  const right=r.opts[0];
+  shell(st,'screen',prog,`<div class="rule">${st.rule}</div><p class="q">Elige la palabra correcta.</p><p class="blank">${r.s.replace('___','<u id="u"></u>')}</p>
+  <div class="chips">${shuffle(r.opts).map(o=>`<button class="chip" data-o="${o}">${o}</button>`).join('')}</div>`);
+  $$('.chip').forEach(c=>c.onclick=()=>{const good=c.dataset.o===right;
+   $$('.chip').forEach(x=>{x.disabled=true;if(x.dataset.o===right)x.classList.add('right');});
+   if(!good)c.classList.add('wrong');$('#u').textContent=right;$('#u').className='fill';feedback(good,'',cb);});
+ },
+ order(st,r,prog,cb){
+  let sh;do{sh=shuffle(r.items.map((x,k)=>k));}while(sh.every((v,k)=>v===k));
+  let seq=[];
+  shell(st,'screen',prog,`<div class="rule">${st.rule}</div><p class="q">${r.q}</p>
+  <div class="lines">${sh.map(k=>`<button class="line" data-k="${k}"><i></i><span>${r.items[k]}</span></button>`).join('')}</div>`);
+  const paint=()=>$$('.line').forEach(l=>{const p=seq.indexOf(+l.dataset.k);l.classList.toggle('sel',p>=0);l.querySelector('i').textContent=p>=0?p+1:'';});
+  $$('.line').forEach(l=>l.onclick=()=>{const k=+l.dataset.k;if(!seq.includes(k)){seq.push(k);paint();$('#chk').disabled=seq.length<r.items.length;}});
+  $('#act').innerHTML='<button class="btn" id="chk" disabled>Comprobar</button><button class="btn ghost" id="clr">Borrar el orden</button>';
+  $('#clr').onclick=()=>{seq=[];paint();$('#chk').disabled=true;};
+  $('#chk').onclick=()=>{const good=seq.every((v,k)=>v===k);
+   const lab=k=>k===0?'Inicio':k===r.items.length-1?'Cierre':'Desarrollo';
+   $('.lines').innerHTML=r.items.map((x,k)=>`<div class="line right"><i>${k+1}</i><span><b>${lab(k)}:</b> ${x}</span></div>`).join('');
+   feedback(good,good?'':'Así queda el texto en orden.',cb);};
+ }
+};
+
+/* ---------- Reloj ---------- */
+function timerHTML(id,min,label){return `<div class="timer"><span class="clock" id="${id}">${String(min).padStart(2,'0')}:00</span><button class="btn" id="${id}b">${label||'Iniciar reloj'}</button></div>`;}
+function timerInit(id,getMin){
+ let left=0,run=null;const el=$('#'+id),b=$('#'+id+'b'),lab=b.textContent;
+ const show=()=>el.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+ b.onclick=()=>{if(run){clearInterval(run);run=null;b.textContent='Continuar';return;}
+  if(left<=0)left=getMin()*60;b.textContent='Pausar';
+  run=every(()=>{left--;show();if(left<=0){clearInterval(run);run=null;el.textContent='¡Tiempo!';b.textContent=lab;}},1000);};
+ return {reset:()=>{if(run){clearInterval(run);run=null;}left=0;el.textContent=String(getMin()).padStart(2,'0')+':00';b.textContent=lab;}};
+}
+
+/* ---------- Misiones en papel ---------- */
+function runPaper(st,th){
+ TH=th||pickTheme();const p=st.paper(TH);if(p.flash)return runFlash(st,p);
+ shell(st,'paper','',`<h3 style="margin-top:6px">${p.title}</h3><div class="rule">${st.rule}</div><p class="need"><b>Necesitas:</b> ${p.need}</p>
+ <ol class="steps">${p.steps.map(s=>`<li>${s}</li>`).join('')}</ol>${p.timer?timerHTML('tm',p.timer,p.timerLabel):''}
+ <p class="q">Cuando termines, revisa tu hoja con un adulto y marca lo que lograste.</p>
+ <div class="check">${p.check.map((c,k)=>`<label for="c${k}"><input type="checkbox" id="c${k}"><span>${c}</span></label>`).join('')}</div>`);
+ if(p.timer)timerInit('tm',()=>p.timer);
+ $('#act').innerHTML='<button class="btn paper" id="sv">Guardar mis estrellas</button>';
+ $('#sv').onclick=()=>{const n=$$('.check input:checked').length;setStars(st.id+'_p',n);
+  $('#fb').innerHTML=`<div class="fb good">Ganaste ${n} de 3 estrellas en papel. ${n<3?'Corrige tu hoja y vuelve a intentarlo cuando quieras.':'¡Misión completa!'}</div>`;
+  $('#act').innerHTML='<button class="btn" id="m">Volver al mapa</button>';$('#m').onclick=home;};
+}
+function runFlash(st,P){
+ const list=P.flash;let i=0,ok=0;
+ function step(){
+  if(i>=list.length){const n=ok===list.length?3:ok===list.length-1?2:ok>=1?1:0;setStars(st.id+'_p',n);
+   shell(st,'paper','',`${avatarHTML(n?'happy':'think','big')}<p class="stars">${starStr(n)}</p><p class="q">Escribiste ${ok} de ${list.length} oraciones sin errores.</p><p>Escribe dos veces en tu cuaderno cada palabra en la que te equivocaste.</p>`);
+   $('#act').innerHTML='<button class="btn" id="m">Volver al mapa</button>';$('#m').onclick=home;return;}
+  shell(st,'paper',`${i+1} / ${list.length}`,`<h3 style="margin-top:6px">${P.title}</h3><p class="need"><b>Necesitas:</b> ${P.need}</p>
+  <p class="q">La oración aparece 10 segundos. Léela con atención, espera a que se esconda y escríbela en tu cuaderno.</p>
+  <div class="flash hidden" id="fl">¿Lista la hoja? Toca el botón.</div><div class="bar"><b id="bar"></b></div>`);
+  $('#act').innerHTML='<button class="btn paper" id="go">Mostrar la oración</button>';
+  $('#go').onclick=()=>{const fl=$('#fl');fl.className='flash';fl.textContent=list[i];$('#act').innerHTML='';let t=100;
+   const id=every(()=>{t--;$('#bar').style.width=t+'%';if(t<=0){clearInterval(id);fl.className='flash hidden';fl.textContent='Ahora escríbela en tu cuaderno, con sus mayúsculas, comas y punto.';
+    $('#act').innerHTML='<button class="btn" id="cmp">Ya la escribí. Comparar</button>';
+    $('#cmp').onclick=()=>{fl.className='flash';fl.textContent=list[i];
+     $('#act').innerHTML='<button class="btn" id="y" style="background:var(--ok)">La escribí igual</button><button class="btn ghost" id="n">Tuve errores</button>';
+     $('#y').onclick=()=>{ok++;i++;step();};$('#n').onclick=()=>{i++;step();};};}},100);};
+ }
+ step();
+}
+
+/* ---------- Gran Reto ---------- */
+function runFinal(){
+ const st={name:'El Gran Reto',color:'#1b2a5c'};const vals={};let tens=0;TH=null;
+ const sel=THEMES.find(t=>t.id===S.theme),TOPICS=sel?sel.topics:THEMES.flatMap(t=>t.topics);
+ shell(st,'paper','',`<p class="need" style="margin-top:8px">Hazlo como en el examen: en una hoja, en silencio y sin ayuda.</p>
+ <div class="block"><h3><em>1</em>Saca tu tema</h3><div class="topic" id="tp">Toca el botón para saber tu tema.</div><button class="btn" id="spin">Sacar un tema</button></div>
+ <div class="block"><h3><em>2</em>Planea y escribe</h3><p class="need">Usa 5 minutos para tu mapa de ideas. Luego escribe tu texto con inicio, desarrollo y cierre.</p>
+ <div class="timer"><span class="clock" id="ft">30:00</span><button class="btn" id="ftb">Iniciar reloj</button>
+ <label for="mins">Minutos <select id="mins"><option>20</option><option selected>30</option><option>40</option></select></label></div></div>
+ <div class="block"><h3><em>3</em>Cuenta tus palabras</h3><p class="need">Cuenta de 10 en 10 y toca un círculo por cada 10 palabras. El mínimo son 80: si tienes más ideas, sigue escribiendo.</p>
+ <div class="tens">${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>`<button class="ten" data-n="${n}">${n*10}</button>`).join('')}</div><p class="q" id="wc"></p></div>
+ <div class="block rub"><h3><em>4</em>Revisión con un adulto</h3><p class="need">Es la rúbrica del colegio. Marquen cada punto: Sí vale todos los puntos, Casi vale la mitad.</p>
+ ${RUBRIC.map((g,gi)=>`<h4><span>${g[0]}</span><span>${g[1].reduce((a,c)=>a+c[1],0)} puntos</span></h4>`+g[1].map((c,ci)=>`<div class="crit"><div>${c[0]} <small>${c[1]} pts</small></div>
+ <div class="tri" data-id="${gi}-${ci}"><button data-v="1">Sí</button><button data-v="0.5">Casi</button><button data-v="0">Aún no</button></div></div>`).join('')).join('')}
+ <div id="res" style="margin-top:16px"></div></div>`);
+ $('#spin').onclick=()=>{let n=0;const id=every(()=>{$('#tp').textContent=TOPICS[Math.floor(Math.random()*TOPICS.length)];if(++n>12)clearInterval(id);},90);};
+ const tm=timerInit('ft',()=>+$('#mins').value);$('#mins').onchange=()=>tm.reset();
+ $$('.ten').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;tens=tens===n?n-1:n;$$('.ten').forEach(x=>x.classList.toggle('on',+x.dataset.n<=tens));
+  $('#wc').textContent=tens>=8?'¡Pasaste el mínimo! Tienes '+tens*10+' palabras o más. Entre más detalles cuentes, mejor queda tu texto.':'Llevas unas '+tens*10+' palabras. Te faltan '+(80-tens*10)+' para el mínimo de 80.';});
+ const count=RUBRIC.reduce((a,g)=>a+g[1].length,0);
+ $$('.tri button').forEach(b=>b.onclick=()=>{const box=b.parentNode;[...box.children].forEach(x=>x.classList.toggle('on',x===b));vals[box.dataset.id]=+b.dataset.v;result();});
+ function result(){
+  if(Object.keys(vals).length<count){$('#res').innerHTML=`<p class="need">Faltan ${count-Object.keys(vals).length} puntos por marcar.</p>`;return;}
+  let pts=0;const todo=new Set();let other=false;
+  RUBRIC.forEach((g,gi)=>g[1].forEach((c,ci)=>{const v=vals[gi+'-'+ci];pts+=c[1]*v;if(v<1){if(c[2])todo.add(c[2]);else other=true;}}));
+  pts=Math.round(pts);const n=pts>=90?3:pts>=70?2:pts>=50?1:0;setStars('final',n);if(pts>S.best){S.best=pts;save();}
+  const names=[...todo].map(id=>STATIONS.find(s=>s.id===id).name);if(todo.has('may'))names.push('Puntos y comas','Ortografía');
+  $('#res').innerHTML=`${avatarHTML(n?'happy':'think','big')}<p class="total">${pts} <small>/ 100</small> <span class="stars" style="font-size:2rem">${starStr(n)}</span></p>
+  ${names.length||other?`<p class="q" style="margin-top:8px">Para subir tu puntaje:</p><ul class="todo">${names.map(x=>`<li>Repite el reto <b>${x}</b>.</li>`).join('')}${other?'<li>Escribe despacio, con letra clara, y cuenta tus palabras antes de entregar.</li>':''}</ul>`:'<p class="q">¡Texto de 100 puntos! Estás lista o listo para el examen.</p>'}
+  <div class="actions"><button class="btn" id="m">Volver al mapa</button></div>`;
+  $('#m').onclick=home;
+ }
+}
+home();
+</script>
+</body>
+</html>
